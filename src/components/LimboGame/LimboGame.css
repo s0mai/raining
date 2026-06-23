@@ -1,0 +1,426 @@
+.limbo-game-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    background: var(--bg-primary);
+    overflow: hidden;
+}
+
+.limbo-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.limbo-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.limbo-display {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--bg-primary);
+    position: relative;
+}
+
+.limbo-multiplier-value {
+    font-size: 120px;
+    font-weight: 700;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    letter-spacing: -2px;
+    line-height: 1;
+    transition: color 0.3s ease;
+    will-change: contents;
+}
+
+.limbo-status {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 500;
+}
+
+/* === Sidebar - 3D Box Style === */
+.limbo-sidebar {
+    width: 320px;
+    min-width: 320px;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+.limbo-sidebar .form-group {
+    position: relative;
+}
+
+.limbo-sidebar .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.limbo-sidebar .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.limbo-sidebar .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* InputNumber styling - 3D Pushable Style */
+.limbo-sidebar .ant-input-number {
+    flex: 1;
+    border-radius: 8px;
+    border: none;
+    background: #2a3f4d;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
+}
+
+.limbo-sidebar .ant-input-number-group-addon,
+.limbo-sidebar .ant-input-number-addon {
+    background: #2a3f4d !important;
+    border: none !important;
+    border-radius: 8px 0 0 8px !important;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
+    padding: 0 12px !important;
+}
+
+.limbo-sidebar .ant-input-number-group-addon .btc-icon {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #f7931a, #ffb347);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+}
+
+.limbo-sidebar .ant-input-number .ant-input-number-input {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.limbo-sidebar .ant-input-number:focus,
+.limbo-sidebar .ant-input-number-focused {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 0 rgba(0, 231, 1, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.limbo-sidebar .ant-input-number-focused+.ant-input-number-group-addon,
+.limbo-sidebar .ant-input-number-group-wrapper:focus-within .ant-input-number-group-addon,
+.limbo-sidebar .ant-input-number-group:focus-within .ant-input-number-group-addon {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 0 rgba(0, 231, 1, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.limbo-sidebar .ant-input-number:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Button Group for ½ and 2× - 3D Pushable Style */
+.limbo-sidebar .ant-btn-group {
+    display: flex;
+    gap: 0;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    transition: all 0.15s ease;
+}
+
+.limbo-sidebar .ant-btn-group .ant-btn {
+    border-radius: 0;
+    border: none;
+    background: #2a3f4d;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 13px;
+    min-width: 48px;
+    padding: 12px 16px;
+    transition: all 0.15s ease;
+    transform: translateY(0);
+}
+
+.limbo-sidebar .ant-btn-group .ant-btn:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.limbo-sidebar .ant-btn-group .ant-btn:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.limbo-sidebar .ant-btn-group .ant-btn:hover:not(:disabled) {
+    background: #3d5564;
+    color: #ffffff;
+}
+
+.limbo-sidebar .ant-btn-group .ant-btn:active:not(:disabled) {
+    background: #1a2c38;
+}
+
+.limbo-sidebar .ant-btn-group .ant-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+/* Bet Mode Tabs - 3D Style (override dashed border) */
+.limbo-sidebar .bet-mode-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #1a2c38;
+    border-radius: 10px;
+    border: none;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.15s ease;
+}
+
+.limbo-sidebar .bet-mode-tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #2a3f4d;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+
+.limbo-sidebar .bet-mode-tab:hover:not(:disabled):not(.active) {
+    color: var(--text-primary);
+    background: #3d5564;
+}
+
+.limbo-sidebar .bet-mode-tab.active {
+    background: #00e701;
+    color: #000;
+    font-weight: 700;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 0 #006601, 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.limbo-sidebar .bet-mode-tab.active:active {
+    transform: translateY(0);
+    box-shadow: 0 0 0 #006601;
+}
+
+.limbo-sidebar .bet-mode-tab:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+/* Bet Button - 3D Green */
+.limbo-sidebar .bet-button {
+    width: 100%;
+    padding: 16px;
+    background: #00e701;
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-6px);
+    box-shadow: 0 6px 0 #006601, 0 6px 10px rgba(0, 0, 0, 0.3);
+    margin-top: 4px;
+    font-family: inherit;
+}
+
+.limbo-sidebar .bet-button:hover:not(:disabled) {
+    background: #00ef01;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 0 #006601, 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.limbo-sidebar .bet-button:active:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 0 #006601, 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.limbo-sidebar .bet-button:disabled {
+    background: #525252;
+    color: #a3a3a3;
+    cursor: not-allowed;
+    transform: translateY(0);
+    box-shadow: none;
+    opacity: 0.6;
+}
+
+/* Input with suffix (multiplier ×) */
+.limbo-sidebar .input-with-suffix {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.limbo-sidebar .input-with-suffix .bet-input {
+    width: 100%;
+    height: 42px;
+    padding: 0 36px 0 12px;
+    border-radius: 8px;
+    border: none;
+    background: #2a3f4d;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+
+.limbo-sidebar .input-with-suffix .bet-input:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 0 rgba(0, 231, 1, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.limbo-sidebar .input-with-suffix .bet-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    transform: none;
+    box-shadow: none;
+}
+
+.limbo-sidebar .multiplier-suffix {
+    position: absolute;
+    right: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    pointer-events: none;
+    transform: translateY(-4px);
+}
+
+/* Slider - 3D Style */
+.limbo-sidebar .limbo-slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    outline: none;
+    margin: 12px 0 4px 0;
+    transform: translateY(-2px);
+}
+
+.limbo-sidebar .limbo-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent-orange);
+    cursor: pointer;
+    border: 2px solid var(--bg-primary);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.limbo-sidebar .limbo-slider:disabled {
+    opacity: 0.5;
+}
+
+.limbo-sidebar .limbo-slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* Win Chance Display - 3D Card */
+.limbo-sidebar .win-chance-display {
+    padding: 12px;
+    background: #1a2c38;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-align: center;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.limbo-sidebar .win-chance-value {
+    color: var(--accent-orange);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 768px) {
+    .limbo-container {
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .limbo-sidebar {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: 0 0 50% !important;
+        border-left: none !important;
+        border-top: 1px solid var(--border-color);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .limbo-sidebar > * {
+        width: 100%;
+        max-width: 360px;
+    }
+    .limbo-sidebar .form-header {
+        justify-content: center;
+    }
+    .limbo-display {
+        flex: 0 0 50% !important;
+        min-height: 0 !important;
+        overflow: hidden;
+    }
+    .limbo-multiplier-value {
+        font-size: 72px;
+    }
+}

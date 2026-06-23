@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Stake Casino Games - Crash, Plinko, Dino, Mines">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Stake Classics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        .loading-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#363e6c;opacity:0;visibility:visible;pointer-events:none;transition:opacity .45s ease,visibility .45s ease}
+        .loading-screen.visible{opacity:1;pointer-events:auto}
+        .loading-screen.hidden{opacity:0;visibility:hidden;pointer-events:none}
+        .loading-screen img{width:min(320px,85vw);height:auto;object-fit:contain;opacity:0;transform:scale(.96);transition:opacity .5s ease .1s,transform .5s ease .1s}
+        .loading-screen.visible img{opacity:1;transform:scale(1)}
+        .loading-screen.hidden img{opacity:0;transform:scale(.98);transition:opacity .35s ease,transform .35s ease}
+    </style>
+</head>
+
+<body>
+    <div id="loadingScreen" class="loading-screen">
+        <img src="/images/loadingrainbet.webp" alt="Loading">
+    </div>
+    <script>
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            document.getElementById('loadingScreen')?.classList.add('visible')
+        }))
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>
