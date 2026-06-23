@@ -140,20 +140,20 @@ function DiceGame() {
 
         const cube = cubeRef.current
         if (cube) {
-            if (cubeVisibleRef.current) {
-                cube.style.transition = 'left 0.6s ease'
-                cube.style.left = roll + '%'
-            } else {
-                cube.style.transition = 'none'
-                const offsetPos = Math.max(0, roll - 5)
-                cube.style.left = offsetPos + '%'
-                cube.style.opacity = '0'
-                void cube.offsetHeight
-                cube.style.transition = 'left 0.6s ease, opacity 0.4s ease'
-                cube.style.left = roll + '%'
-                cube.style.opacity = '1'
-                cubeVisibleRef.current = true
-            }
+                    if (cubeVisibleRef.current) {
+                                cube.style.transition = 'left 0.6s ease'
+                                cube.style.left = (isUnder ? roll : (100 - roll)) + '%'
+                            } else {
+                                cube.style.transition = 'none'
+                                const offsetPos = Math.max(0, (isUnder ? roll : (100 - roll)) - 5)
+                                cube.style.left = offsetPos + '%'
+                                cube.style.opacity = '0'
+                                void cube.offsetHeight
+                                cube.style.transition = 'left 0.6s ease, opacity 0.4s ease'
+                                cube.style.left = (isUnder ? roll : (100 - roll)) + '%'
+                                cube.style.opacity = '1'
+                                cubeVisibleRef.current = true
+                            }
         }
 
         const fd = fairnessData
@@ -270,7 +270,7 @@ function DiceGame() {
                                     className={`dice-slider-large ${rollDirection === 'under' ? 'dir-under' : 'dir-over'}`}
                                     disabled={rolling}
                                     style={{
-                                        background: `linear-gradient(to right, ${rollDirection === 'under' ? '#ff4444' : '#00e701'} ${(target/100)*100}%, ${rollDirection === 'under' ? '#00e701' : '#ff4444'} ${(target/100)*100}%)`
+                                        background: `linear-gradient(to right, ${rollDirection === 'under' ? '#00e701' : '#ff4444'} ${(target/100)*100}%, ${rollDirection === 'under' ? '#ff4444' : '#00e701'} ${(target/100)*100}%)`
                                     }}
                                 />
                             </div>
