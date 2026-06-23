@@ -69,7 +69,7 @@ document.getElementById('loadingScreen')?.classList.add('hidden')
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <TonConnectUIProvider manifestUrl="/tonconnect-manifest.json">
+        <TonConnectUIProvider manifestUrl="https://raining-one.vercel.app/tonconnect-manifest.json">
             <TelegramThemeProvider>
                 <ConfigProvider theme={stakeTheme}>
                     <BrowserRouter>

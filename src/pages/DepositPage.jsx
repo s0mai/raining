@@ -295,26 +295,24 @@ function DepositPage() {
                             <div className="deposit-tab-content">
                                 {!depositInfo && !tonConfirming && (
                                     <>
-                                        {selectedCrypto.id === 'ton' && (
-                                            <div className="deposit-amount-field">
-                                                <label className="withdraw-label">Amount (TON)</label>
-                                                <div className="withdraw-amount-row">
-                                                    <input
-                                                        type="number"
-                                                        className="withdraw-input"
-                                                        placeholder="0.00"
-                                                        value={depositAmount}
-                                                        onChange={e => setDepositAmount(e.target.value)}
-                                                    />
-                                                </div>
+                                        <div className="deposit-amount-field">
+                                            <label className="withdraw-label">Amount ({selectedCrypto.symbol})</label>
+                                            <div className="withdraw-amount-row">
+                                                <input
+                                                    type="number"
+                                                    className="withdraw-input"
+                                                    placeholder="0.00"
+                                                    value={depositAmount}
+                                                    onChange={e => setDepositAmount(e.target.value)}
+                                                />
                                             </div>
-                                        )}
+                                        </div>
                                         <button
                                             className="deposit-action-btn"
                                             onClick={handleInitiateDeposit}
                                             disabled={depositLoading}
                                         >
-                                            {depositLoading ? 'Creating...' : tonConnectUI.connected && selectedCrypto.id === 'ton' ? 'Send TON' : selectedCrypto.id === 'ton' ? 'Connect Wallet' : 'Generate Deposit Address'}
+                                            {depositLoading ? 'Creating...' : selectedCrypto.id === 'ton' ? (tonConnectUI.connected ? 'Send TON' : 'Connect Wallet') : 'Generate Deposit Address'}
                                         </button>
                                         {depositError && <p className="deposit-error-msg">{depositError}</p>}
                                     </>
