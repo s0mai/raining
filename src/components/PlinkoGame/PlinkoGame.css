@@ -202,6 +202,12 @@
     border-top: 1px solid var(--border-color);
 }
 
+.plinko-controls .logo {
+    font-family: 'Dancing Script', cursive;
+    font-size: 20px;
+    color: #00b4d8;
+}
+
 .plinko-controls .control-btn {
     width: 36px;
     height: 36px;
