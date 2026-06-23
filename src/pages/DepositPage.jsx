@@ -24,6 +24,7 @@ function QRSVG({ seed, size = 140 }) {
     const grid = 17
     const cells = []
     let hash = 0
+    if (!seed) return null
     for (let i = 0; i < seed.length; i++) {
         hash = ((hash << 5) - hash) + seed.charCodeAt(i)
         hash |= 0

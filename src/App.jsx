@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { App as AntApp } from 'antd'
+import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 import CrashPage from './pages/CrashPage'
@@ -13,8 +14,9 @@ import RouteLoadingOverlay from './components/RouteLoadingOverlay'
 function App() {
     return (
         <AntApp>
-            <RouteLoadingOverlay />
-            <Routes>
+            <ErrorBoundary>
+                <RouteLoadingOverlay />
+                <Routes>
                 <Route path="/" element={<Layout />}>
                     <Route index element={<HomePage />} />
                     <Route path="crash" element={<CrashPage />} />
@@ -25,6 +27,7 @@ function App() {
                 </Route>
                 <Route path="/deposit" element={<DepositPage />} />
             </Routes>
+            </ErrorBoundary>
         </AntApp>
     )
 }

@@ -1,12 +1,15 @@
 import { useState } from 'react'
 
+const FALLBACK = { color: '#555', symbol: '?' }
+
 export default function CryptoImg({ crypto, size = 32, className = '' }) {
     const [failed, setFailed] = useState(false)
+    const c = crypto || FALLBACK
 
     if (failed) {
         return (
             <div className={className} style={{
-                background: crypto.color,
+                background: c.color,
                 width: size,
                 height: size,
                 borderRadius: '50%',
@@ -18,15 +21,15 @@ export default function CryptoImg({ crypto, size = 32, className = '' }) {
                 color: '#fff',
                 flexShrink: 0,
             }}>
-                {crypto.symbol[0]}
+                {(c.symbol && c.symbol[0]) || '?'}
             </div>
         )
     }
 
     return (
         <img
-            src={crypto.img}
-            alt={crypto.symbol}
+            src={c.img}
+            alt={c.symbol || ''}
             className={className}
             style={{
                 width: size,
