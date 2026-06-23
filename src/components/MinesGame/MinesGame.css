@@ -10,7 +10,7 @@
 .mines-game .game-container {
     display: flex;
     flex: 1;
-    overflow: hidden;
+    overflow-y: auto;
     position: relative;
 }
 

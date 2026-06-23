@@ -1767,7 +1767,7 @@ body {
     /* ===== CRASH (768) ===== */
     .crash-game .game-container {
         flex-direction: column-reverse !important;
-        overflow: hidden;
+        overflow-y: auto;
     }
     .crash-sidebar {
         width: 100% !important;
@@ -1779,7 +1779,7 @@ body {
     .crash-game .game-display {
         flex: 0 0 50% !important;
         min-height: 0 !important;
-        overflow: hidden;
+        overflow-y: auto;
     }
     .crash-game .chart-container {
         margin: 6px !important;

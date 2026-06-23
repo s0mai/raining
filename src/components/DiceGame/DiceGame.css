@@ -4,20 +4,20 @@
     height: 100%;
     width: 100%;
     background: var(--bg-primary);
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .dice-main {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .dice-container {
     display: flex;
     flex: 1;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 /* === Result Display === */
