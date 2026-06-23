@@ -1841,7 +1841,7 @@ body {
     }
     .plinko-game-wrapper .plinko-content {
         padding: 2px;
-        justify-content: flex-start;
+        justify-content: center;
     }
 
     /* ===== Betting panel shared styles (768) ===== */
