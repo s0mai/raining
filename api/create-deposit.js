@@ -35,7 +35,7 @@ export default async function handler(req, res) {
             price_amount: amount ? parseFloat(amount) : undefined,
             price_currency: 'usd',
             pay_currency: nowCurrency,
-            ipn_callback_url: `${process.env.VERCEL_URL || 'https://raining-one.vercel.app'}/api/nowpayments-webhook`,
+            ipn_callback_url: `https://${process.env.VERCEL_URL || 'rainbets.vercel.app'}/api/nowpayments-webhook`,
             order_id: `${userId}_${Date.now()}`,
             is_fixed_rate: false,
             is_fee_paid_by_user: true,
