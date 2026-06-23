@@ -14,6 +14,7 @@ const cryptos = [
     { id: 'usdt', name: 'Tether', symbol: 'USDT', color: '#26a17b', balance: 0.00, img: 'https://www.svgrepo.com/show/367256/usdt.svg' },
 ]
 
+const COINGECKO_IDS = { btc: 'bitcoin', eth: 'ethereum', ton: 'the-open-network', ltc: 'litecoin', sol: 'solana', usdt: 'tether' }
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
 function QRSVG({ seed, size = 140 }) {
@@ -83,6 +84,8 @@ function DepositPage() {
     const [depositLoading, setDepositLoading] = useState(false)
     const [depositError, setDepositError] = useState('')
     const [tonConfirming, setTonConfirming] = useState(false)
+    const [prices, setPrices] = useState({})
+    const [depositUsd, setDepositUsd] = useState('')
 
     const userId = tg?.initDataUnsafe?.user?.id?.toString() || 'dev_user'
 
@@ -93,13 +96,40 @@ function DepositPage() {
     }, [userId])
 
     useEffect(() => {
+        const ids = Object.values(COINGECKO_IDS).join(',')
+        fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`)
+            .then(r => r.json())
+            .then(data => {
+                const mapped = {}
+                for (const [key, val] of Object.entries(COINGECKO_IDS)) {
+                    mapped[key] = data[val]?.usd || 0
+                }
+                setPrices(mapped)
+            })
+            .catch(() => {})
+    }, [])
+
+    useEffect(() => {
         if (!selectedCrypto) {
             setDepositInfo(null)
             setDepositLoading(false)
             setDepositError('')
             setTonConfirming(false)
+            setDepositUsd('')
         }
     }, [selectedCrypto])
+
+    const estimatedCrypto = selectedCrypto && prices[selectedCrypto.id] && depositUsd
+        ? parseFloat(depositUsd) / prices[selectedCrypto.id]
+        : null
+
+    function handleUsdChange(val) {
+        setDepositUsd(val)
+        if (selectedCrypto && selectedCrypto.id === 'ton') {
+            const tonVal = parseFloat(val) / (prices.ton || 0)
+            setDepositAmount(tonVal ? tonVal.toFixed(6) : '')
+        }
+    }
 
     async function handleInitiateDeposit() {
         if (!selectedCrypto) return
@@ -138,7 +168,7 @@ function DepositPage() {
                     body: JSON.stringify({
                         userId,
                         currency: selectedCrypto.id,
-                        amount: depositAmount || undefined,
+                        amount: depositUsd || undefined,
                     }),
                 })
                 const data = await resp.json()
@@ -162,9 +192,13 @@ function DepositPage() {
     }
 
     async function fetchPlatformTonAddress() {
-        const resp = await fetch(`${API_BASE}/api/connect-ton`)
-        const data = await resp.json()
-        return data.address
+        try {
+            const resp = await fetch(`${API_BASE}/api/connect-ton`)
+            const data = await resp.json()
+            return data.address
+        } catch {
+            return ''
+        }
     }
 
     async function trackTonTransaction(userId, expectedAmount) {
@@ -194,6 +228,7 @@ function DepositPage() {
         setWithdrawAmount('')
         setWithdrawError({})
         setDepositAmount('')
+        setDepositUsd('')
         setDepositInfo(null)
         setDepositError('')
         setTonConfirming(false)
@@ -295,17 +330,43 @@ function DepositPage() {
                             <div className="deposit-tab-content">
                                 {!depositInfo && !tonConfirming && (
                                     <>
-                                        <div className="deposit-amount-field">
-                                            <label className="withdraw-label">Amount ({selectedCrypto.symbol})</label>
-                                            <div className="withdraw-amount-row">
-                                                <input
-                                                    type="number"
-                                                    className="withdraw-input"
-                                                    placeholder="0.00"
-                                                    value={depositAmount}
-                                                    onChange={e => setDepositAmount(e.target.value)}
-                                                />
+                                        <div className="deposit-box">
+                                            <div className="deposit-amount-field">
+                                                <label className="withdraw-label">Amount (USD)</label>
+                                                <div className="withdraw-amount-row">
+                                                    <input
+                                                        type="number"
+                                                        className="withdraw-input"
+                                                        placeholder="0.00"
+                                                        value={depositUsd}
+                                                        onChange={e => handleUsdChange(e.target.value)}
+                                                    />
+                                                </div>
                                             </div>
+                                            {estimatedCrypto !== null && prices[selectedCrypto.id] > 0 && (
+                                                <div className="deposit-estimate-row">
+                                                    <span className="deposit-info-label">Estimated {selectedCrypto.symbol}</span>
+                                                    <span className="deposit-estimate-value">~{estimatedCrypto.toFixed(6)}</span>
+                                                </div>
+                                            )}
+                                            {prices[selectedCrypto.id] > 0 && (
+                                                <div className="deposit-rate-row">
+                                                    <span className="deposit-info-label">1 {selectedCrypto.symbol}</span>
+                                                    <span className="deposit-info-value">${prices[selectedCrypto.id].toFixed(2)}</span>
+                                                </div>
+                                            )}
+                                            {selectedCrypto.id === 'ton' && (
+                                                <div className="deposit-amount-field" style={{ marginTop: 8 }}>
+                                                    <label className="withdraw-label">Or enter TON amount</label>
+                                                    <input
+                                                        type="number"
+                                                        className="withdraw-input"
+                                                        placeholder="0.00"
+                                                        value={depositAmount}
+                                                        onChange={e => setDepositAmount(e.target.value)}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                         <button
                                             className="deposit-action-btn"
@@ -379,36 +440,38 @@ function DepositPage() {
 
                         {activeTab === 'withdraw' && (
                             <div className="deposit-tab-content">
-                                <div className="withdraw-balance-ref">
-                                    <span>Available Balance</span>
-                                    <span className="withdraw-balance-amount">${balance.toFixed(2)}</span>
-                                </div>
-                                <div className="withdraw-field">
-                                    <label className="withdraw-label">Destination Address</label>
-                                    <input
-                                        type="text"
-                                        className={`withdraw-input${withdrawError.address ? ' error' : ''}`}
-                                        placeholder={`Enter ${selectedCrypto.symbol} address`}
-                                        value={withdrawAddress}
-                                        onChange={e => { setWithdrawAddress(e.target.value); setWithdrawError({ ...withdrawError, address: null }) }}
-                                    />
-                                    {withdrawError.address && <span className="withdraw-error-msg">{withdrawError.address}</span>}
-                                </div>
-                                <div className="withdraw-field">
-                                    <label className="withdraw-label">Amount</label>
-                                    <div className="withdraw-amount-row">
-                                        <input
-                                            type="number"
-                                            className={`withdraw-input${withdrawError.amount ? ' error' : ''}`}
-                                            placeholder="0.00"
-                                            value={withdrawAmount}
-                                            onChange={e => { setWithdrawAmount(e.target.value); setWithdrawError({ ...withdrawError, amount: null }) }}
-                                        />
-                                        <button className="withdraw-max-btn" onClick={() => setWithdrawAmount(balance.toString())}>
-                                            Max
-                                        </button>
+                                <div className="deposit-box">
+                                    <div className="withdraw-balance-ref">
+                                        <span>Available Balance</span>
+                                        <span className="withdraw-balance-amount">${balance.toFixed(2)}</span>
                                     </div>
-                                    {withdrawError.amount && <span className="withdraw-error-msg">{withdrawError.amount}</span>}
+                                    <div className="withdraw-field">
+                                        <label className="withdraw-label">Destination Address</label>
+                                        <input
+                                            type="text"
+                                            className={`withdraw-input${withdrawError.address ? ' error' : ''}`}
+                                            placeholder={`Enter ${selectedCrypto.symbol} address`}
+                                            value={withdrawAddress}
+                                            onChange={e => { setWithdrawAddress(e.target.value); setWithdrawError({ ...withdrawError, address: null }) }}
+                                        />
+                                        {withdrawError.address && <span className="withdraw-error-msg">{withdrawError.address}</span>}
+                                    </div>
+                                    <div className="withdraw-field">
+                                        <label className="withdraw-label">Amount</label>
+                                        <div className="withdraw-amount-row">
+                                            <input
+                                                type="number"
+                                                className={`withdraw-input${withdrawError.amount ? ' error' : ''}`}
+                                                placeholder="0.00"
+                                                value={withdrawAmount}
+                                                onChange={e => { setWithdrawAmount(e.target.value); setWithdrawError({ ...withdrawError, amount: null }) }}
+                                            />
+                                            <button className="withdraw-max-btn" onClick={() => setWithdrawAmount(balance.toString())}>
+                                                Max
+                                            </button>
+                                        </div>
+                                        {withdrawError.amount && <span className="withdraw-error-msg">{withdrawError.amount}</span>}
+                                    </div>
                                 </div>
                                 <button className="withdraw-confirm-btn" onClick={handleWithdraw}>
                                     Confirm Withdrawal

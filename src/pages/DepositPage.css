@@ -433,6 +433,23 @@
     opacity: 0.85;
 }
 
+.withdraw-confirm-btn {
+    box-shadow: 0 4px 12px rgba(0, 231, 1, 0.25);
+}
+
+/* === Deposit Box (card for form sections) === */
+.deposit-box {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
 /* === Deposit Action Button === */
 .deposit-action-btn {
     width: 100%;
@@ -445,6 +462,7 @@
     color: #fff;
     cursor: pointer;
     transition: opacity 0.15s;
+    box-shadow: 0 4px 12px rgba(0, 231, 1, 0.25);
 }
 
 .deposit-action-btn:hover {
@@ -454,6 +472,7 @@
 .deposit-action-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    box-shadow: none;
 }
 
 /* === Amount Field === */
@@ -462,6 +481,35 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+
+/* === Estimate Row === */
+.deposit-estimate-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 8px 14px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.deposit-estimate-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'Courier New', monospace;
+}
+
+/* === Rate Row === */
+.deposit-rate-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 6px 14px;
+    background: transparent;
 }
 
 /* === Error Message === */
