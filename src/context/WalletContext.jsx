@@ -57,10 +57,13 @@ export function WalletProvider({ children }) {
             const resp = await fetch(`${API_BASE}/api/balance/${userId}`)
             if (resp.ok) {
                 const data = await resp.json()
-                if (data.balance !== undefined) {
+                if (data.balance !== undefined && data.balance !== null) {
                     const rounded = parseFloat(parseFloat(data.balance).toFixed(2))
-                    setBalance(rounded)
-                    try { localStorage.setItem(STORAGE_KEY, rounded.toString()) } catch (e) { /* ignore */ }
+                    const localBalance = getStoredBalance()
+                    if (rounded > 0 || localBalance <= 0) {
+                        setBalance(rounded)
+                        try { localStorage.setItem(STORAGE_KEY, rounded.toString()) } catch (e) { /* ignore */ }
+                    }
                 }
             }
         } catch (e) { /* silently fail */ }

@@ -1,4 +1,6 @@
-import { getBalance } from '../../lib/storage.js'
+import { getBalance, setBalance } from '../../lib/storage.js'
+
+const INITIAL_BALANCE = 1000.00
 
 export default async function handler(req, res) {
     const { userId } = req.query
@@ -7,7 +9,11 @@ export default async function handler(req, res) {
     }
 
     try {
-        const balance = await getBalance(userId)
+        let balance = await getBalance(userId)
+        if (balance === 0) {
+            await setBalance(userId, INITIAL_BALANCE)
+            balance = INITIAL_BALANCE
+        }
         res.json({ balance })
     } catch (error) {
         console.error('Balance fetch error:', error)
