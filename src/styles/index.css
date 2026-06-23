@@ -818,7 +818,7 @@ body {
 .app-layout {
     display: flex;
     height: var(--tg-viewport-stable-height, 100%);
-    width: 100vw;
+    width: 100%;
     background: var(--bg-primary);
     overflow: hidden;
 }
@@ -1004,7 +1004,7 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
     background: var(--bg-primary);
 }
 

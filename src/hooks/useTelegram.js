@@ -10,7 +10,16 @@ export function useTelegram() {
     tg.ready()
     tg.expand()
     tg.enableClosingConfirmation?.()
+
+    const setHeight = () => {
+      const h = tg.viewportStableHeight
+      if (h) document.body.style.setProperty('--tg-viewport-stable-height', h + 'px')
+    }
+    setHeight()
+    tg.onEvent('viewportChanged', setHeight)
+
     setReady(true)
+    return () => tg.offEvent('viewportChanged', setHeight)
   }, [])
 
   const isDark = tg?.colorScheme !== 'light'
