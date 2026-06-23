@@ -45,7 +45,7 @@ export default async function handler(req, res) {
             delete payload.price_amount
         }
 
-        const resp = await fetch(`${NOWPAYMENTS_API}/invoice`, {
+        const resp = await fetch(`${NOWPAYMENTS_API}/payment`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
