@@ -14,7 +14,18 @@ export default async function handler(req, res) {
     const apiKey = process.env.TONCENTER_API_KEY
     const baseUrl = 'https://toncenter.com/api/v2'
 
+    async function getTonUsdPrice() {
+        try {
+            const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd')
+            const data = await resp.json()
+            return data['the-open-network']?.usd || 6.5
+        } catch {
+            return 6.5
+        }
+    }
+
     try {
+        const tonPrice = await getTonUsdPrice()
         const maxAttempts = 20
         for (let i = 0; i < maxAttempts; i++) {
             const url = `${baseUrl}/getTransactions?address=${platformWallet}&limit=20&archival=false${apiKey ? `&api_key=${apiKey}` : ''}`
@@ -27,10 +38,12 @@ export default async function handler(req, res) {
                         const value = parseFloat(tx.in_msg.value) / 1e9
                         if (Math.abs(value - parseFloat(expectedAmount)) < 0.001) {
                             const currentBalance = await getBalance(userId)
-                            await setBalance(userId, currentBalance + value)
+                            const usdValue = value * tonPrice
+                            await setBalance(userId, currentBalance + usdValue)
                             return res.json({
                                 confirmed: true,
                                 amount: value,
+                                usdAmount: usdValue,
                                 txHash: tx.transaction_id?.hash || tx.hash,
                             })
                         }

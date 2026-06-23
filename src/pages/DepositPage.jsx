@@ -3,19 +3,22 @@ import { Link } from 'react-router-dom'
 import { useTonConnectUI } from '@tonconnect/ui-react'
 import { useWallet } from '../context/WalletContext'
 import { useTelegram } from '../hooks/useTelegram'
+import CryptoImg from '../components/CryptoImg'
 import './DepositPage.css'
 
 const cryptos = [
-    { id: 'btc', name: 'Bitcoin', symbol: 'BTC', color: '#f7931a', balance: 0.0000, img: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
-    { id: 'eth', name: 'Ethereum', symbol: 'ETH', color: '#627eea', balance: 0.0000, img: 'https://cdn.worldvectorlogo.com/logos/ethereum-eth.svg' },
-    { id: 'ton', name: 'Toncoin', symbol: 'TON', color: '#0088cc', balance: 0.00, img: 'https://cdn-icons-png.flaticon.com/256/12114/12114247.png' },
-    { id: 'ltc', name: 'Litecoin', symbol: 'LTC', color: '#345d9d', balance: 0.00, img: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg' },
-    { id: 'sol', name: 'Solana', symbol: 'SOL', color: '#9945ff', balance: 0.00, img: 'https://cryptologos.cc/logos/solana-sol-logo.svg' },
-    { id: 'usdt', name: 'Tether', symbol: 'USDT', color: '#26a17b', balance: 0.00, img: 'https://www.svgrepo.com/show/367256/usdt.svg' },
+    { id: 'btc', name: 'Bitcoin', symbol: 'BTC', color: '#f7931a', img: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
+    { id: 'eth', name: 'Ethereum', symbol: 'ETH', color: '#627eea', img: 'https://cdn.worldvectorlogo.com/logos/ethereum-eth.svg' },
+    { id: 'ton', name: 'Toncoin', symbol: 'TON', color: '#0088cc', img: 'https://cdn-icons-png.flaticon.com/256/12114/12114247.png' },
+    { id: 'ltc', name: 'Litecoin', symbol: 'LTC', color: '#345d9d', img: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg' },
+    { id: 'sol', name: 'Solana', symbol: 'SOL', color: '#9945ff', img: 'https://cryptologos.cc/logos/solana-sol-logo.svg' },
+    { id: 'usdt', name: 'Tether', symbol: 'USDT', color: '#26a17b', img: 'https://www.svgrepo.com/show/367256/usdt.svg' },
 ]
 
 const COINGECKO_IDS = { btc: 'bitcoin', eth: 'ethereum', ton: 'the-open-network', ltc: 'litecoin', sol: 'solana', usdt: 'tether' }
 const API_BASE = import.meta.env.VITE_API_URL || ''
+const IS_DEV = import.meta.env.DEV
+const PLATFORM_TON_WALLET = 'UQBbY_WYNPKoxPEplMIc6i_q_iJXzs4hpYU8G2WqYvZCr93W'
 
 function QRSVG({ seed, size = 140 }) {
     const grid = 17
@@ -54,22 +57,6 @@ function QRSVG({ seed, size = 140 }) {
     )
 }
 
-function CryptoIcon({ crypto, size = 40 }) {
-    const [failed, setFailed] = useState(false)
-    if (failed) {
-        return (
-            <div className="crypto-icon" style={{ background: crypto.color, width: size, height: size }}>
-                {crypto.symbol[0]}
-            </div>
-        )
-    }
-    return (
-        <div className="crypto-icon" style={{ width: size, height: size }}>
-            <img src={crypto.img} alt={crypto.symbol} onError={() => setFailed(true)} />
-        </div>
-    )
-}
-
 function DepositPage() {
     const { balance, updateBalance, syncBalance, showToast } = useWallet()
     const { tg } = useTelegram()
@@ -86,6 +73,7 @@ function DepositPage() {
     const [tonConfirming, setTonConfirming] = useState(false)
     const [prices, setPrices] = useState({})
     const [depositUsd, setDepositUsd] = useState('')
+    const [depositAmount, setDepositAmount] = useState('')
 
     const userId = tg?.initDataUnsafe?.user?.id?.toString() || 'dev_user'
 
@@ -96,17 +84,29 @@ function DepositPage() {
     }, [userId])
 
     useEffect(() => {
-        const ids = Object.values(COINGECKO_IDS).join(',')
-        fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`)
-            .then(r => r.json())
-            .then(data => {
-                const mapped = {}
-                for (const [key, val] of Object.entries(COINGECKO_IDS)) {
-                    mapped[key] = data[val]?.usd || 0
-                }
-                setPrices(mapped)
-            })
-            .catch(() => {})
+        const FALLBACK_PRICES = { btc: 67000, eth: 3400, ton: 6.5, ltc: 85, sol: 140, usdt: 1 }
+        setPrices(FALLBACK_PRICES)
+
+        function fetchPrices() {
+            const ids = Object.values(COINGECKO_IDS).join(',')
+            fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`)
+                .then(r => r.json())
+                .then(data => {
+                    const mapped = {}
+                    let valid = true
+                    for (const [key, val] of Object.entries(COINGECKO_IDS)) {
+                        const p = data[val]?.usd
+                        if (p) mapped[key] = p
+                        else valid = false
+                    }
+                    if (valid) setPrices(mapped)
+                })
+                .catch(() => {})
+        }
+
+        fetchPrices()
+        const interval = setInterval(fetchPrices, 60000)
+        return () => clearInterval(interval)
     }, [])
 
     useEffect(() => {
@@ -118,6 +118,18 @@ function DepositPage() {
             setDepositUsd('')
         }
     }, [selectedCrypto])
+
+    // Poll balance when a deposit address is shown (non-TON)
+    useEffect(() => {
+        if (!depositInfo || depositInfo.status !== 'pending') return
+        const initialBalance = balance
+        const interval = setInterval(async () => {
+            if (userId && userId !== 'dev_user') {
+                await syncBalance(userId)
+            }
+        }, 5000)
+        return () => clearInterval(interval)
+    }, [depositInfo?.status])
 
     const estimatedCrypto = selectedCrypto && prices[selectedCrypto.id] && depositUsd
         ? parseFloat(depositUsd) / prices[selectedCrypto.id]
@@ -136,6 +148,12 @@ function DepositPage() {
         setDepositLoading(true)
         setDepositError('')
         setDepositInfo(null)
+
+        if (IS_DEV) {
+            setDepositError('Deposits require the Vercel backend deployment. Use https://raining-one.vercel.app to test deposits.')
+            setDepositLoading(false)
+            return
+        }
 
         try {
             if (selectedCrypto.id === 'ton') {
@@ -195,9 +213,9 @@ function DepositPage() {
         try {
             const resp = await fetch(`${API_BASE}/api/connect-ton`)
             const data = await resp.json()
-            return data.address
+            return data.address || PLATFORM_TON_WALLET
         } catch {
-            return ''
+            return PLATFORM_TON_WALLET
         }
     }
 
@@ -217,8 +235,6 @@ function DepositPage() {
             console.error('Failed to track TON tx:', e)
         }
     }
-
-    const [depositAmount, setDepositAmount] = useState('')
 
     function openModal(crypto) {
         setSelectedCrypto(crypto)
@@ -242,6 +258,10 @@ function DepositPage() {
     }
 
     function handleWithdraw() {
+        if (IS_DEV) {
+            setWithdrawError({ address: 'Withdrawals require the Vercel backend. Use https://raining-one.vercel.app' })
+            return
+        }
         const errors = {}
         if (!withdrawAddress.trim()) {
             errors.address = 'Address cannot be empty'
@@ -281,12 +301,11 @@ function DepositPage() {
             <div className="deposit-crypto-list">
                 {cryptos.map(crypto => (
                     <div key={crypto.id} className="deposit-crypto-item" onClick={() => openModal(crypto)}>
-                        <CryptoIcon crypto={crypto} />
+                        <CryptoImg crypto={crypto} size={40} className="crypto-icon" />
                         <div className="deposit-crypto-info">
                             <span className="deposit-crypto-name">{crypto.name}</span>
                             <span className="deposit-crypto-symbol">{crypto.symbol}</span>
                         </div>
-                        <span className="deposit-crypto-balance">{crypto.balance.toFixed(crypto.id === 'btc' ? 4 : 2)}</span>
                     </div>
                 ))}
             </div>
@@ -296,7 +315,7 @@ function DepositPage() {
                     <div className="deposit-modal" onClick={e => e.stopPropagation()}>
                         <div className="deposit-modal-header">
                             <div className="deposit-modal-crypto">
-                                <CryptoIcon crypto={selectedCrypto} size={28} />
+                                <CryptoImg crypto={selectedCrypto} size={28} className="crypto-icon" />
                                 <span>{selectedCrypto.name} ({selectedCrypto.symbol})</span>
                             </div>
                             <button className="deposit-modal-close" onClick={() => setSelectedCrypto(null)}>✕</button>
@@ -347,12 +366,6 @@ function DepositPage() {
                                                 <div className="deposit-estimate-row">
                                                     <span className="deposit-info-label">Estimated {selectedCrypto.symbol}</span>
                                                     <span className="deposit-estimate-value">~{estimatedCrypto.toFixed(6)}</span>
-                                                </div>
-                                            )}
-                                            {prices[selectedCrypto.id] > 0 && (
-                                                <div className="deposit-rate-row">
-                                                    <span className="deposit-info-label">1 {selectedCrypto.symbol}</span>
-                                                    <span className="deposit-info-value">${prices[selectedCrypto.id].toFixed(2)}</span>
                                                 </div>
                                             )}
                                             {selectedCrypto.id === 'ton' && (
@@ -419,13 +432,6 @@ function DepositPage() {
                                             Send only <strong>{depositInfo.pay_currency}</strong> to this address. Balance will update automatically after confirmation.
                                         </p>
                                     </>
-                                )}
-
-                                {depositInfo && depositInfo.status === 'confirming' && (
-                                    <div className="deposit-confirming">
-                                        <div className="deposit-spinner" />
-                                        <p>{depositInfo.message || 'Waiting for blockchain confirmation...'}</p>
-                                    </div>
                                 )}
 
                                 {tonConfirming && (

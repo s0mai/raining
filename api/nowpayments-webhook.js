@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         }
     }
 
-    const { payment_status, order_id, actually_paid, pay_currency, pay_amount } = req.body
+    const { payment_status, order_id, actually_paid_usd, actually_paid, pay_currency, pay_amount } = req.body
 
     if (!order_id) {
         return res.status(400).json({ error: 'Missing order_id' })
@@ -29,10 +29,10 @@ export default async function handler(req, res) {
     const userId = order_id.split('_')[0]
 
     if (payment_status === 'finished') {
-        const amount = parseFloat(actually_paid || pay_amount || 0)
+        const amount = parseFloat(actually_paid_usd || actually_paid || pay_amount || 0)
         if (amount > 0) {
             await addBalance(userId, amount)
-            console.log(`Credited ${amount} ${pay_currency} to user ${userId}`)
+            console.log(`Credited $${amount} USD to user ${userId}`)
         }
     }
 

@@ -36,6 +36,7 @@ export function WalletProvider({ children }) {
     const [transactions, setTransactions] = useState([])
     const [totalDeposits, setTotalDeposits] = useState(getStoredDeposits)
     const [pollingEnabled, setPollingEnabled] = useState(false)
+    const pollingRef = useRef(null)
 
     // Toast system
     const [toasts, setToasts] = useState([])
@@ -72,13 +73,26 @@ export function WalletProvider({ children }) {
         try { localStorage.setItem(STORAGE_KEY, rounded.toString()) } catch (e) { /* ignore */ }
     }, [])
 
+    // Cleanup polling interval on unmount
+    useEffect(() => {
+        return () => {
+            if (pollingRef.current) {
+                clearInterval(pollingRef.current)
+                pollingRef.current = null
+            }
+        }
+    }, [])
+
     const enablePolling = useCallback((userId) => {
-        if (pollingEnabled) return
+        if (pollingEnabled || pollingRef.current) return
         setPollingEnabled(true)
         syncBalance(userId)
-        const interval = setInterval(() => syncBalance(userId), 3000)
+        pollingRef.current = setInterval(() => syncBalance(userId), 3000)
         const cleanup = () => {
-            clearInterval(interval)
+            if (pollingRef.current) {
+                clearInterval(pollingRef.current)
+                pollingRef.current = null
+            }
             setPollingEnabled(false)
         }
         return cleanup

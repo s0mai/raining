@@ -2,44 +2,26 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useWallet } from '../context/WalletContext'
 import ProfileModal from './ProfileModal'
+import CryptoImg from './CryptoImg'
 
 const cryptos = [
-    { id: 'btc', name: 'Bitcoin', symbol: 'BTC', icon: '₿', color: '#f7931a', balance: 0.0000 },
-    { id: 'eth', name: 'Ethereum', symbol: 'ETH', icon: '⟠', color: '#627eea', balance: 0.0000 },
-    { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: '₮', color: '#26a17b', balance: 0.00 },
-    { id: 'sol', name: 'Solana', symbol: 'SOL', icon: '◎', color: '#9945ff', balance: 0.00 },
-    { id: 'doge', name: 'Dogecoin', symbol: 'DOGE', icon: 'Ð', color: '#c2a633', balance: 0.00 },
-    { id: 'xrp', name: 'Ripple', symbol: 'XRP', icon: '✕', color: '#23292f', balance: 0.00 },
-    { id: 'ada', name: 'Cardano', symbol: 'ADA', icon: '₳', color: '#0033ad', balance: 0.00 },
-    { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: '⬡', color: '#0088cc', balance: 0.00 },
-    { id: 'ltc', name: 'Litecoin', symbol: 'LTC', icon: 'Ł', color: '#345d9d', balance: 0.00 },
+    { id: 'btc', name: 'Bitcoin', symbol: 'BTC', color: '#f7931a', img: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
+    { id: 'eth', name: 'Ethereum', symbol: 'ETH', color: '#627eea', img: 'https://cdn.worldvectorlogo.com/logos/ethereum-eth.svg' },
+    { id: 'ton', name: 'Toncoin', symbol: 'TON', color: '#0088cc', img: 'https://cdn-icons-png.flaticon.com/256/12114/12114247.png' },
+    { id: 'ltc', name: 'Litecoin', symbol: 'LTC', color: '#345d9d', img: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg' },
+    { id: 'sol', name: 'Solana', symbol: 'SOL', color: '#9945ff', img: 'https://cryptologos.cc/logos/solana-sol-logo.svg' },
+    { id: 'usdt', name: 'Tether', symbol: 'USDT', color: '#26a17b', img: 'https://www.svgrepo.com/show/367256/usdt.svg' },
 ]
-
-const BtcIcon = ({ size = 20, fontSize = 12 }) => (
-    <div style={{
-        width: size,
-        height: size,
-        minWidth: size,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #f7931a, #ffb347)',
-        color: '#fff',
-        fontWeight: 800,
-        fontSize: fontSize,
-        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
-        lineHeight: 1,
-    }}>₿</div>
-)
 
 function Header() {
     const navigate = useNavigate()
     const { balance, toasts, totalDeposits } = useWallet()
     const [showCryptoDropdown, setShowCryptoDropdown] = useState(false)
+    const [selectedCryptoId, setSelectedCryptoId] = useState('btc')
     const [profileOpen, setProfileOpen] = useState(false)
     const dropdownRef = useRef(null)
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user
+    const selectedCrypto = cryptos.find(c => c.id === selectedCryptoId) || cryptos[0]
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -56,6 +38,11 @@ function Header() {
         maximumFractionDigits: 2,
     })
 
+    function handleSelectCrypto(crypto) {
+        setSelectedCryptoId(crypto.id)
+        setShowCryptoDropdown(false)
+    }
+
     return (
         <header className="header">
             <div className="header-left">
@@ -67,7 +54,7 @@ function Header() {
             <div className="header-center">
                 <div className="header-wallet">
                     <div className="wallet-balance-display" onClick={() => setShowCryptoDropdown(!showCryptoDropdown)}>
-                        <BtcIcon size={18} fontSize={11} />
+                        <CryptoImg crypto={selectedCrypto} size={18} className="wallet-balance-icon" />
                         <span className="wallet-balance-amount">{formattedBalance}</span>
                         <span className="wallet-dropdown-toggle">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
@@ -89,15 +76,12 @@ function Header() {
                             </div>
                             <div className="crypto-dropdown-list">
                                 {cryptos.map(crypto => (
-                                    <div key={crypto.id} className="crypto-dropdown-item" onClick={() => setShowCryptoDropdown(false)}>
-                                        <div className="crypto-dropdown-icon" style={{ background: crypto.color }}>
-                                            {crypto.icon}
-                                        </div>
+                                    <div key={crypto.id} className={`crypto-dropdown-item${crypto.id === selectedCryptoId ? ' selected' : ''}`} onClick={() => handleSelectCrypto(crypto)}>
+                                        <CryptoImg crypto={crypto} size={32} className="crypto-dropdown-icon" />
                                         <div className="crypto-dropdown-info">
                                             <span className="crypto-dropdown-name">{crypto.name}</span>
                                             <span className="crypto-dropdown-symbol">{crypto.symbol}</span>
                                         </div>
-                                        <span className="crypto-dropdown-balance">{crypto.balance.toFixed(crypto.id === 'btc' ? 4 : 2)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -110,7 +94,7 @@ function Header() {
                                 <div key={toast.id} className={`wallet-toast wallet-toast-${toast.type}`}>
                                     <div className="wallet-toast-icon">
                                         {toast.type === 'bet' && (
-                                            <BtcIcon size={20} fontSize={11} />
+                                            <CryptoImg crypto={selectedCrypto} size={20} className="wallet-balance-icon" />
                                         )}
                                         {toast.type === 'win' && (
                                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#00e701" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

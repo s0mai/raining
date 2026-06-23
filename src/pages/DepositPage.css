@@ -417,24 +417,35 @@
 /* === Confirm Button === */
 .withdraw-confirm-btn {
     width: 100%;
-    padding: 12px;
-    background: var(--accent);
+    padding: 16px;
+    background: #00e701;
     border: none;
-    border-radius: 10px;
-    font-size: 14px;
+    border-radius: 8px;
+    color: #000;
+    font-size: 16px;
     font-weight: 700;
-    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     cursor: pointer;
-    transition: opacity 0.15s;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-6px);
+    box-shadow: 0 6px 0 #006601, 0 6px 10px rgba(0, 0, 0, 0.3);
     margin-top: 4px;
+    font-family: inherit;
 }
 
 .withdraw-confirm-btn:hover {
-    opacity: 0.85;
+    background: #00ef01;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 0 #006601, 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-.withdraw-confirm-btn {
-    box-shadow: 0 4px 12px rgba(0, 231, 1, 0.25);
+.withdraw-confirm-btn:active {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 0 #006601, 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* === Deposit Box (card for form sections) === */
@@ -453,26 +464,43 @@
 /* === Deposit Action Button === */
 .deposit-action-btn {
     width: 100%;
-    padding: 12px;
-    background: var(--accent);
+    padding: 16px;
+    background: #00e701;
     border: none;
-    border-radius: 10px;
-    font-size: 14px;
+    border-radius: 8px;
+    color: #000;
+    font-size: 16px;
     font-weight: 700;
-    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     cursor: pointer;
-    transition: opacity 0.15s;
-    box-shadow: 0 4px 12px rgba(0, 231, 1, 0.25);
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-6px);
+    box-shadow: 0 6px 0 #006601, 0 6px 10px rgba(0, 0, 0, 0.3);
+    margin-top: 4px;
+    font-family: inherit;
 }
 
 .deposit-action-btn:hover {
-    opacity: 0.85;
+    background: #00ef01;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 0 #006601, 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.deposit-action-btn:active {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 0 #006601, 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .deposit-action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    background: #525252;
+    color: #888;
+    transform: translateY(0);
     box-shadow: none;
+    cursor: not-allowed;
 }
 
 /* === Amount Field === */
