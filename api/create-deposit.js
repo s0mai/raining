@@ -35,7 +35,7 @@ export default async function handler(req, res) {
             price_amount: amount ? parseFloat(amount) : undefined,
             price_currency: 'usd',
             pay_currency: nowCurrency,
-            ipn_callback_url: `https://${process.env.VERCEL_URL || 'rainbets.vercel.app'}/api/nowpayments-webhook`,
+            ipn_callback_url: 'https://rainbets.vercel.app/api/nowpayments-webhook',
             order_id: `${userId}_${Date.now()}`,
             is_fixed_rate: false,
             is_fee_paid_by_user: true,
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
 
         if (!resp.ok) {
             console.error('NowPayments error:', data)
-            return res.status(500).json({ error: data.message || 'Failed to create deposit' })
+            return res.status(500).json({ error: data.error || data.message || 'Failed to create deposit' })
         }
 
         await setDepositAddress(userId, currency, data.pay_address, data.payment_id)
