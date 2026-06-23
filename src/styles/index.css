@@ -1820,7 +1820,7 @@ body {
         overflow-y: auto;
     }
     .plinko-sidebar-wrapper {
-        flex: 0 0 25% !important;
+        flex: 0 0 30% !important;
         width: 100% !important;
         min-width: 0 !important;
         min-height: 0 !important;
@@ -1835,7 +1835,7 @@ body {
         gap: 4px;
     }
     .plinko-game-wrapper {
-        flex: 0 0 75% !important;
+        flex: 0 0 70% !important;
         min-height: 0 !important;
         overflow-y: auto;
     }
