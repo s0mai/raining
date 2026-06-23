@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import { useTonConnectUI } from '@tonconnect/ui-react'
 import { useWallet } from '../context/WalletContext'
 import { useTelegram } from '../hooks/useTelegram'
@@ -19,44 +20,6 @@ const COINGECKO_IDS = { btc: 'bitcoin', eth: 'ethereum', ton: 'the-open-network'
 const API_BASE = import.meta.env.VITE_API_URL || ''
 const IS_DEV = import.meta.env.DEV
 const PLATFORM_TON_WALLET = 'UQBbY_WYNPKoxPEplMIc6i_q_iJXzs4hpYU8G2WqYvZCr93W'
-
-function QRSVG({ seed, size = 140 }) {
-    const grid = 17
-    const cells = []
-    let hash = 0
-    if (!seed) return null
-    for (let i = 0; i < seed.length; i++) {
-        hash = ((hash << 5) - hash) + seed.charCodeAt(i)
-        hash |= 0
-    }
-    for (let y = 0; y < grid; y++) {
-        for (let x = 0; x < grid; x++) {
-            const isFinder = (x < 5 && y < 5) || (x >= grid - 5 && y < 5) || (x < 5 && y >= grid - 5)
-            let filled
-            if (isFinder) {
-                const cx = x < 5 ? 2 : 14
-                const cy = y < 5 ? 2 : 14
-                const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2)
-                const innerR = 1, midR = 2.3, outerR = 4.5
-                filled = dist <= innerR || (dist > midR && dist <= outerR)
-            } else {
-                const val = ((hash + x * 13 + y * 7) * 17) & 0xff
-                filled = val > 96
-            }
-            if (filled) {
-                cells.push({ x: x * size / grid, y: y * size / grid, s: size / grid + 0.5 })
-            }
-        }
-    }
-    return (
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-            <rect width={size} height={size} fill="#fff" rx="6" />
-            {cells.map((c, i) => (
-                <rect key={i} x={c.x} y={c.y} width={c.s} height={c.s} fill="#000" rx="0.5" />
-            ))}
-        </svg>
-    )
-}
 
 function DepositPage() {
     const { balance, updateBalance, syncBalance, showToast } = useWallet()
@@ -396,7 +359,15 @@ function DepositPage() {
                                 {depositInfo && depositInfo.status === 'pending' && (
                                     <>
                                         <div className="deposit-qr-container">
-                                            <QRSVG seed={depositInfo.address} />
+                                            <QRCodeSVG
+                                                value={depositInfo.address}
+                                                size={140}
+                                                bgColor="#ffffff"
+                                                fgColor="#000000"
+                                                level="M"
+                                                includeMargin={false}
+                                                style={{ borderRadius: 8 }}
+                                            />
                                         </div>
                                         <div className="deposit-info-row">
                                             <span className="deposit-info-label">Send exactly</span>
