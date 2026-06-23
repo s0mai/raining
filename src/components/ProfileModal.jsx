@@ -300,7 +300,7 @@ function ProfileModal({ open, onClose, totalDeposits }) {
                 <div className="profile-name">{displayName}</div>
 
                 <div className="vip-large-badge">
-                    {level ? getVIPSVG(level.name, 72) : getVIPSVG('Bronze', 72)}
+                    {level ? getVIPSVG(level.name, 56) : getVIPSVG('Bronze', 56)}
                 </div>
 
                 {level ? (

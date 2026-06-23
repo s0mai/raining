@@ -17,13 +17,15 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    padding: 28px 24px 24px;
+    padding: 24px 20px 20px;
     width: 100%;
-    max-width: 400px;
+    max-width: 360px;
+    max-height: 85vh;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
     position: relative;
 }
@@ -49,8 +51,8 @@
 }
 
 .profile-avatar {
-    width: 88px;
-    height: 88px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid var(--border-color);
@@ -58,22 +60,22 @@
 }
 
 .profile-avatar-placeholder {
-    width: 88px;
-    height: 88px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 3px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 700;
     color: var(--text-secondary);
     flex-shrink: 0;
 }
 
 .profile-name {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 700;
     color: var(--text-primary);
     text-align: center;
@@ -162,8 +164,8 @@
 
 /* === Large VIP Badge === */
 .vip-large-badge {
-    width: 72px;
-    height: 72px;
+    width: 56px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -175,11 +177,11 @@
     width: 100%;
     background: var(--bg-primary);
     border-radius: 12px;
-    padding: 14px 16px;
+    padding: 12px 14px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .profile-card-header {
