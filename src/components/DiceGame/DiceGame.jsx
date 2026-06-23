@@ -14,10 +14,7 @@ function DiceGame() {
     const [rolling, setRolling] = useState(false)
     const [result, setResult] = useState(null)
     const [history, setHistory] = useState([])
-    const [fairnessOpen, setFairnessOpen] = useState(false)
     const [fairnessData, setFairnessData] = useState({ serverSeedHash: '...', clientSeed: '...', nonce: 0 })
-    const [serverSeedRevealed, setServerSeedRevealed] = useState(false)
-    const [editingClientSeed, setEditingClientSeed] = useState(false)
     const [clientSeedInput, setClientSeedInput] = useState('')
     const [verifyModal, setVerifyModal] = useState(false)
     const [verifyServerSeed, setVerifyServerSeed] = useState('')
@@ -202,18 +199,6 @@ function DiceGame() {
         }, 600)
     }
 
-    async function handleClientSeedSave() {
-        const pf = pfRef.current
-        if (!pf || !clientSeedInput.trim()) return
-        await pf.setClientSeed(clientSeedInput.trim())
-        setEditingClientSeed(false)
-        refreshFairness()
-    }
-
-    function handleRevealServerSeed() {
-        setServerSeedRevealed(true)
-    }
-
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
             showToast('info', 'Copied!', '', 1500)
@@ -389,74 +374,6 @@ function DiceGame() {
                                 </div>
                             </div>
 
-                            <div className="dice-fairness">
-                                <div className="dice-fairness-header" onClick={() => setFairnessOpen(!fairnessOpen)}>
-                                    <span>🔍 Provably Fair</span>
-                                    <span className={`dice-fairness-arrow ${fairnessOpen ? 'open' : ''}`}>▼</span>
-                                </div>
-                                {fairnessOpen && (
-                                    <div className="dice-fairness-content">
-                                        <div className="dice-fairness-row">
-                                            <span className="dice-fairness-label">Server Seed (SHA-256)</span>
-                                            <div className="dice-fairness-value-row">
-                                                <span className="dice-fairness-value truncated">
-                                                    {fairnessData.serverSeedHash ? fairnessData.serverSeedHash.slice(0, 16) + '...' : '...'}
-                                                </span>
-                                                <button className="dice-fairness-copy" onClick={() => copyToClipboard(fairnessData.serverSeedHash || '')}>
-                                                    📋
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="dice-fairness-row">
-                                            <span className="dice-fairness-label">Client Seed</span>
-                                            <div className="dice-fairness-value-row">
-                                                {editingClientSeed ? (
-                                                    <input
-                                                        className="dice-fairness-input"
-                                                        value={clientSeedInput}
-                                                        onChange={e => setClientSeedInput(e.target.value)}
-                                                        onBlur={handleClientSeedSave}
-                                                        onKeyDown={e => e.key === 'Enter' && handleClientSeedSave()}
-                                                        autoFocus
-                                                    />
-                                                ) : (
-                                                    <>
-                                                        <span className="dice-fairness-value truncated">
-                                                            {fairnessData.clientSeed}
-                                                        </span>
-                                                        <button className="dice-fairness-copy" onClick={() => setEditingClientSeed(true)}>
-                                                            ✏️
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="dice-fairness-row">
-                                            <span className="dice-fairness-label">Nonce</span>
-                                            <span className="dice-fairness-value">{fairnessData.nonce}</span>
-                                        </div>
-                                        {serverSeedRevealed ? (
-                                            <div className="dice-fairness-row">
-                                                <span className="dice-fairness-label">Raw Server Seed</span>
-                                                <div className="dice-fairness-value-row">
-                                                    <span className="dice-fairness-value" style={{ maxWidth: 140 }}>
-                                                        {pfRef.current?.serverSeed || ''}
-                                                    </span>
-                                                    <button className="dice-fairness-copy" onClick={() => copyToClipboard(pfRef.current?.serverSeed || '')}>
-                                                        📋
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <button className="dice-fairness-reveal" onClick={handleRevealServerSeed}>
-                                                🔓 Reveal Server Seed
-                                            </button>
-                                        )}
-                                        <button className="dice-fairness-verify-btn" onClick={() => openVerifyModal(null)}>
-                                            🛡️ Verify a roll
-                                        </button>
-                                    </div>
-                                )}
                             </div>
                     </div>
                 </div>
