@@ -1788,18 +1788,18 @@ body {
     /* ===== MINES (768) ===== */
     .mines-game .game-container {
         flex-direction: column-reverse !important;
-        overflow: hidden !important;
+        overflow-y: auto !important;
     }
     .mines-game .mines-sidebar {
         width: 100% !important;
-        flex: 0 0 50% !important;
+        flex: 0 0 40% !important;
         overflow-y: auto;
         min-width: 0 !important;
     }
     .mines-display-wrapper {
-        flex: 0 0 50% !important;
+        flex: 0 0 60% !important;
         min-height: 0 !important;
-        overflow: hidden;
+        overflow-y: auto;
     }
     .mines-display {
         padding: 8px !important;
@@ -1817,7 +1817,7 @@ body {
     /* ===== PLINKO (768) ===== */
     .plinko-container {
         flex-direction: column-reverse !important;
-        overflow: hidden;
+        overflow-y: auto;
     }
     .plinko-sidebar-wrapper {
         flex: 0 0 40% !important;
@@ -1837,7 +1837,7 @@ body {
     .plinko-game-wrapper {
         flex: 0 0 60% !important;
         min-height: 0 !important;
-        overflow: hidden;
+        overflow-y: auto;
     }
     .plinko-game-wrapper .plinko-content {
         padding: 2px;

@@ -107,6 +107,16 @@
     }
 }
 
+@media (max-width: 480px) {
+    .home-section {
+        padding: 16px;
+    }
+    .stake-games-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+}
+
 .stake-card {
     display: flex;
     flex-direction: column;
