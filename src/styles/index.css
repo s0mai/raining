@@ -64,7 +64,7 @@ body {
 .app {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: var(--tg-viewport-stable-height, 100%);
     background: var(--bg-primary);
 }
 
@@ -817,7 +817,7 @@ body {
 /* ===== App Layout ===== */
 .app-layout {
     display: flex;
-    height: 100vh;
+    height: var(--tg-viewport-stable-height, 100%);
     width: 100vw;
     background: var(--bg-primary);
     overflow: hidden;
