@@ -12,10 +12,16 @@ import {
     ThunderboltOutlined,
     QuestionCircleOutlined
 } from '@ant-design/icons'
+import { useWallet } from '../../context/WalletContext'
+import BetInput from '../BetInput'
+import CryptoImg from '../CryptoImg'
+import { cryptos } from '../../data/cryptos'
 
 const { Text } = Typography
 
 function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancelBet }) {
+    const { activeCurrency, t } = useWallet()
+    const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     const [activeTab, setActiveTab] = useState('manual')
     const [betAmount, setBetAmount] = useState(1)
     const [cashoutAt, setCashoutAt] = useState(2.00)
@@ -47,12 +53,12 @@ function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancel
 
     const getButtonText = () => {
         if (phase === 'waiting' && betPlaced) {
-            return 'Cancel'
+            return t('game.cancel')
         }
         if (phase === 'running' && betPlaced) {
-            return `Cash Out $${(betAmount * multiplier).toFixed(2)}`
+            return `${t('crash.cash_out_btn')} $${(betAmount * multiplier).toFixed(2)}`
         }
-        return 'Bet'
+        return t('game.bet')
     }
 
     const getButtonClass = () => {
@@ -68,13 +74,13 @@ function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancel
                     className={`bet-mode-tab ${activeTab === 'manual' ? 'active' : ''}`}
                     onClick={() => setActiveTab('manual')}
                 >
-                    Manual
+                    {t('game.manual')}
                 </button>
                 <button
                     className={`bet-mode-tab ${activeTab === 'auto' ? 'active' : ''}`}
                     onClick={() => setActiveTab('auto')}
                 >
-                    Auto
+                    {t('game.auto')}
                 </button>
             </div>
 
@@ -83,25 +89,19 @@ function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancel
                     {/* Bet Amount */}
                     <div className="form-group">
                         <div className="form-header">
-                            <label className="form-label" style={{ margin: 0 }}>Bet Amount</label>
-                            <Text type="secondary" style={{ margin: 0 }}>₿{Number(betAmount || 0).toFixed(2)}</Text>
+                            <label className="form-label" style={{ margin: 0 }}>{t('game.bet_amount')}</label>
+                            <Text type="secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><CryptoImg crypto={selectedCrypto} size={12} /> ${Number(betAmount || 0).toFixed(2)}</Text>
                         </div>
                         <div className="input-row">
-                            <InputNumber
+                            <BetInput
                                 value={betAmount}
                                 onChange={setBetAmount}
                                 min={0}
-                                step={1}
-                                addonBefore={
-                                    <div className="btc-icon" style={{ background: 'linear-gradient(135deg, #f7931a, #ffb347)' }}>₿</div>
-                                }
-                                controls={false}
-                                formatter={(v) => `${v}`}
-                                parser={(v) => v.replace(/\$\s?|(,*)/g, '')}
+                                crypto={selectedCrypto}
                             />
                             <Button.Group>
-                                <Button onClick={() => setBetAmount(prev => Math.max(0, prev / 2))}>½</Button>
-                                <Button onClick={() => setBetAmount(prev => prev * 2)}>2×</Button>
+                                <Button onClick={() => setBetAmount(prev => Math.max(0, prev / 2))}>{t('game.half')}</Button>
+                                <Button onClick={() => setBetAmount(prev => prev * 2)}>{t('game.double')}</Button>
                             </Button.Group>
                         </div>
                     </div>
@@ -123,8 +123,8 @@ function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancel
                     <div className="form-group">
                         <div className="form-header">
                             <label className="form-label" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
-                                Auto Cashout
-                                <Tooltip title="Auto cashout when multiplier reaches this value">
+                                {t('game.auto_cashout')}
+                                <Tooltip title={t('game.auto_cashout_hint')}>
                                     <QuestionCircleOutlined style={{ marginLeft: 6, cursor: 'pointer', color: '#b1b6c6' }} />
                                 </Tooltip>
                             </label>
@@ -152,11 +152,10 @@ function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancel
                     {/* Profit Display - 3D Card Style */}
                     <div className="profit-card-3d">
                         <div className="form-header" style={{ marginBottom: 4 }}>
-                            <label className="form-label" style={{ margin: 0 }}>Profit on Win</label>
-                            <Text type="secondary" style={{ margin: 0 }}>₿{profit.toFixed(2)}</Text>
+                            <label className="form-label" style={{ margin: 0 }}>{t('game.profit_on_win')}</label>
                         </div>
-                        <Text strong style={{ color: '#00e701', fontSize: 16, fontFamily: "'Courier New', monospace" }}>
-                            +₿{profit.toFixed(2)}
+                        <Text strong style={{ color: '#00e701', fontSize: 16, fontFamily: "'Courier New', monospace", display: 'flex', alignItems: 'center', gap: 4 }}>
+                            +<CryptoImg crypto={selectedCrypto} size={12} />${profit.toFixed(2)}
                         </Text>
                     </div>
                 </div>
@@ -164,7 +163,7 @@ function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancel
                 <div className="bet-form">
                     <Card size="small" style={{ background: 'var(--bg-input)', borderColor: 'var(--border-color)', borderRadius: 10 }}>
                         <Text type="secondary">
-                            Auto betting coming soon! Configure automated betting strategies.
+                            {t('game.auto_betting')}
                         </Text>
                     </Card>
                 </div>

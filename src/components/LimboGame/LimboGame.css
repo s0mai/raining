@@ -113,7 +113,7 @@
 .limbo-sidebar .ant-input-number-group-addon .btc-icon {
     width: 20px;
     height: 20px;
-    background: linear-gradient(135deg, #f7931a, #ffb347);
+    background: linear-gradient(135deg, #c67a15, #d9933a);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -132,14 +132,14 @@
 .limbo-sidebar .ant-input-number:focus,
 .limbo-sidebar .ant-input-number-focused {
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 rgba(0, 231, 1, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 rgba(20, 117, 225, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .limbo-sidebar .ant-input-number-focused+.ant-input-number-group-addon,
 .limbo-sidebar .ant-input-number-group-wrapper:focus-within .ant-input-number-group-addon,
 .limbo-sidebar .ant-input-number-group:focus-within .ant-input-number-group-addon {
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 rgba(0, 231, 1, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 rgba(20, 117, 225, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .limbo-sidebar .ant-input-number:disabled {
@@ -229,16 +229,16 @@
 }
 
 .limbo-sidebar .bet-mode-tab.active {
-    background: #00e701;
+    background: #1475e1;
     color: #000;
     font-weight: 700;
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 #006601, 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 #0d4f91, 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .limbo-sidebar .bet-mode-tab.active:active {
     transform: translateY(0);
-    box-shadow: 0 0 0 #006601;
+    box-shadow: 0 0 0 #0d4f91;
 }
 
 .limbo-sidebar .bet-mode-tab:disabled {
@@ -250,10 +250,10 @@
 .limbo-sidebar .bet-button {
     width: 100%;
     padding: 16px;
-    background: #00e701;
+    background: #1475e1;
     border: none;
     border-radius: 8px;
-    color: #000;
+    color: #fff;
     font-size: 16px;
     font-weight: 700;
     text-transform: uppercase;
@@ -264,20 +264,20 @@
     align-items: center;
     justify-content: center;
     transform: translateY(-6px);
-    box-shadow: 0 6px 0 #006601, 0 6px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 0 #0d4f91, 0 6px 10px rgba(0, 0, 0, 0.3);
     margin-top: 4px;
     font-family: inherit;
 }
 
 .limbo-sidebar .bet-button:hover:not(:disabled) {
-    background: #00ef01;
+    background: #1a86f0;
     transform: translateY(-4px);
-    box-shadow: 0 4px 0 #006601, 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 0 #0d4f91, 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .limbo-sidebar .bet-button:active:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 #006601, 0 2px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 0 #0d4f91, 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .limbo-sidebar .bet-button:disabled {
@@ -287,6 +287,34 @@
     transform: translateY(0);
     box-shadow: none;
     opacity: 0.6;
+}
+
+.limbo-sidebar .cancel-button {
+    width: 100%;
+    padding: 12px;
+    background: #f87171;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 0 #b91c1c, 0 4px 8px rgba(0, 0, 0, 0.3);
+    font-family: inherit;
+    transition: all 0.15s ease;
+}
+
+.limbo-sidebar .cancel-button:hover {
+    background: #ef4444;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 0 #b91c1c, 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.limbo-sidebar .cancel-button:active {
+    transform: translateY(0);
+    box-shadow: 0 0 0 #b91c1c;
 }
 
 /* Input with suffix (multiplier ×) */
@@ -315,7 +343,7 @@
 
 .limbo-sidebar .input-with-suffix .bet-input:focus {
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 rgba(0, 231, 1, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 rgba(20, 117, 225, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .limbo-sidebar .input-with-suffix .bet-input:disabled {

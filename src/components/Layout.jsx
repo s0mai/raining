@@ -1,15 +1,13 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import Header from './Header'
-
-const bottomNav = [
-  { icon: 'crash', label: 'Crash', path: '/crash' },
-  { icon: 'dice', label: 'Dice', path: '/dice' },
-  { icon: 'limbo', label: 'Limbo', path: '/limbo' },
-  { icon: 'plinko', label: 'Plinko', path: '/plinko' },
-  { icon: 'mines', label: 'Mines', path: '/mines' },
-]
+import { useWallet } from '../context/WalletContext'
 
 function Layout() {
+    const { t } = useWallet()
+    const bottomNav = [
+        { icon: 'games', label: t('nav.games'), path: '/' },
+        { icon: 'user', label: t('nav.profile'), path: '/profile' },
+    ]
 
     return (
         <div className="app-layout">

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Typography } from 'antd'
 
 const { Text } = Typography
 
 function PlayerResults({ cashouts }) {
     const [visibleCashouts, setVisibleCashouts] = useState([])
+    const timeoutRef = useRef(null)
 
     // Add new cashouts and remove old ones
     useEffect(() => {
@@ -19,11 +20,14 @@ function PlayerResults({ cashouts }) {
             setVisibleCashouts(prev => [...prev, newCashout].slice(-5))
 
             // Auto-remove after 10 seconds (longer for better visibility)
-            setTimeout(() => {
+            timeoutRef.current = setTimeout(() => {
                 setVisibleCashouts(prev =>
                     prev.filter(c => c.id !== newCashout.id)
                 )
             }, 10000)
+        }
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current)
         }
     }, [cashouts.length])
 

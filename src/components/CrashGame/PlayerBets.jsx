@@ -15,7 +15,7 @@ const generatePlayers = () => {
     const currencies = [
         { symbol: '₮', color: '#26A17B', name: 'USDT' },
         { symbol: '₿', color: '#F7931A', name: 'BTC' },
-        { symbol: '$', color: '#00e701', name: 'USD' },
+        { symbol: '$', color: '#1475e1', name: 'USD' },
         { symbol: 'Ξ', color: '#627EEA', name: 'ETH' },
     ]
 
@@ -85,7 +85,7 @@ function PlayerBets({ multiplier, phase, onPlayerCashout, userBetData }) {
                 onClick={() => setExpanded(!expanded)}
             >
                 <Space>
-                    <Badge status="processing" color="#00e701" />
+                    <Badge status="processing" color="#1475e1" />
                     <UserOutlined />
                     <Text strong>{playerCount + (userBetData ? 1 : 0)}</Text>
                 </Space>

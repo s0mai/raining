@@ -10,6 +10,7 @@ import {
     BugOutlined,
     CheckCircleOutlined,
 } from '@ant-design/icons'
+import { useWallet } from '../context/WalletContext'
 
 const { Text, Title, Paragraph } = Typography
 
@@ -40,6 +41,7 @@ function GameControls({
     const soundEnabled = soundEnabledProp !== undefined ? soundEnabledProp : localSoundEnabled
     const isDebugMode = debugMode !== undefined ? debugMode : localDebugMode
     const fairnessModalOpen = fairnessOpen !== undefined ? fairnessOpen : localFairnessOpen
+    const { t } = useWallet()
 
     const handleSoundToggle = () => {
         const next = !soundEnabled
@@ -83,7 +85,7 @@ function GameControls({
             <div className="game-controls-bar">
                 <Space>
                     {onSettingsClick && (
-                        <Tooltip title="Game Settings">
+                        <Tooltip title={t('controls.game_settings')}>
                             <Button
                                 type="text"
                                 icon={<SettingOutlined />}
@@ -93,7 +95,7 @@ function GameControls({
                         </Tooltip>
                     )}
                     {!hideFullscreen && (
-                        <Tooltip title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}>
+                        <Tooltip title={isFullscreen ? t('controls.exit_fullscreen') : t('controls.fullscreen')}>
                             <Button
                                 type="text"
                                 icon={isFullscreen ? <FullscreenExitOutlined /> : <ExpandOutlined />}
@@ -103,7 +105,7 @@ function GameControls({
                         </Tooltip>
                     )}
                     {onStatsClick && (
-                        <Tooltip title="Statistics">
+                        <Tooltip title={t('controls.statistics')}>
                             <Button
                                 type="text"
                                 icon={<BarChartOutlined />}
@@ -112,7 +114,7 @@ function GameControls({
                             />
                         </Tooltip>
                     )}
-                    <Tooltip title={soundEnabled ? 'Mute' : 'Unmute'}>
+                    <Tooltip title={soundEnabled ? t('controls.mute') : t('controls.unmute')}>
                         <Button
                             type="text"
                             icon={<SoundOutlined />}
@@ -120,19 +122,19 @@ function GameControls({
                             onClick={handleSoundToggle}
                         />
                     </Tooltip>
-                    <Tooltip title={isDebugMode ? 'Disable Debug' : 'Enable Debug (Peek Fairness)'}>
+                    <Tooltip title={isDebugMode ? t('controls.debug_disable') : t('controls.debug')}>
                         <Button
                             type="text"
                             icon={<BugOutlined />}
                             className={`control-btn ${isDebugMode ? 'active-debug' : ''}`}
-                            style={{ color: isDebugMode ? '#00e701' : undefined }}
+                            style={{ color: isDebugMode ? '#1475e1' : undefined }}
                             onClick={handleDebugToggle}
                         />
                     </Tooltip>
                     {children}
                 </Space>
 
-                <span className="logo" style={{ color: 'var(--text-primary)' }}>Rainbet</span>
+                <span className="logo" style={{ color: 'var(--text-primary)' }}>{t('loading.title')}</span>
 
                 <Button
                     type="text"
@@ -140,7 +142,7 @@ function GameControls({
                     className="fairness-btn"
                     onClick={handleFairnessOpen}
                 >
-                    Fairness
+                    {t('controls.fairness')}
                 </Button>
             </div>
 
@@ -148,8 +150,8 @@ function GameControls({
                 <Modal
                     title={
                         <Space>
-                            <SafetyCertificateOutlined style={{ color: '#00e701' }} />
-                            <span>Provably Fair</span>
+                            <SafetyCertificateOutlined style={{ color: '#1475e1' }} />
+                            <span>{t('controls.provably_fair')}</span>
                         </Space>
                     }
                     open={fairnessModalOpen}
@@ -167,13 +169,13 @@ function GameControls({
                             <div className="fairness-header">
                                 <Title level={5}>
                                     <CheckCircleOutlined style={{ marginRight: 8 }} />
-                                    This game is provably fair
+                                    {t('controls.fairness_desc')}
                                 </Title>
-                                <Paragraph>Uses HMAC-SHA256 to generate results from a server seed and your client seed.</Paragraph>
+                                <Paragraph>{t('controls.fairness_desc_detail')}</Paragraph>
                             </div>
 
                             <div className="fairness-item">
-                                <span className="fairness-label">Server Seed (Hash)</span>
+                                <span className="fairness-label">{t('controls.server_seed')}</span>
                                 <div className="fairness-value">
                                     <Text copyable={{ text: FAKE_HASH }} style={{ fontSize: 11, wordBreak: 'break-all' }}>
                                         {FAKE_HASH.slice(0, 24)}...
@@ -182,7 +184,7 @@ function GameControls({
                             </div>
 
                             <div className="fairness-item">
-                                <span className="fairness-label">Client Seed</span>
+                                <span className="fairness-label">{t('controls.client_seed')}</span>
                                 <div className="fairness-value" style={{ display: 'flex', gap: 6 }}>
                                     <Input
                                         size="small"
@@ -195,7 +197,7 @@ function GameControls({
                             </div>
 
                             <div className="fairness-item">
-                                <span className="fairness-label">Nonce</span>
+                                <span className="fairness-label">{t('controls.nonce')}</span>
                                 <div className="fairness-value">
                                     <Text style={{ background: 'rgba(47, 69, 83, 0.5)', padding: '4px 12px', borderRadius: 6, color: '#fff' }}>
                                         0
@@ -206,10 +208,10 @@ function GameControls({
                             <Divider style={{ borderColor: 'rgba(255,255,255,0.06)', margin: '12px 0' }} />
 
                             <div className="fairness-item">
-                                <span className="fairness-label">Reveal Server Seed</span>
+                                <span className="fairness-label">{t('controls.reveal_seed')}</span>
                                 <div className="fairness-value">
                                     <Text type="secondary" style={{ fontSize: 11 }}>
-                                        Click to reveal the previous server seed
+                                        {t('controls.reveal_instruction')}
                                     </Text>
                                 </div>
                             </div>

@@ -1,0 +1,5 @@
+/node_modules/
+/.vscode/
+/flags/in_progress/
+/gradient/
+*.py

@@ -1,4 +1,4 @@
-/* === Profile Modal === */
+/* === Profile Modal / Page === */
 .profile-overlay {
     position: fixed;
     top: 0;
@@ -118,7 +118,7 @@
 .vip-progress-bar {
     width: 100%;
     height: 8px;
-    background: var(--bg-primary);
+    background: var(--bg-tertiary);
     border-radius: 4px;
     overflow: hidden;
     position: relative;
@@ -318,13 +318,4 @@
     color: #e33535;
     border: 1px solid rgba(227, 53, 53, 0.3);
     box-shadow: 0 0 12px rgba(227, 53, 53, 0.15);
-}
-
-.obsidian-svg-icon {
-    animation: obsidian-glow 3s ease-in-out infinite;
-}
-
-@keyframes obsidian-glow {
-    0%, 100% { filter: drop-shadow(0 0 2px rgba(107, 63, 160, 0.4)); }
-    50% { filter: drop-shadow(0 0 8px rgba(107, 63, 160, 0.8)); }
 }

@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;600;700;800;900&display=swap');
 
+@font-face {
+    font-family: 'ProximaNova';
+    src: url('/font/ProximaNovaRegular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
 /* ===== CSS Variables - Exact Stake Colors ===== */
 :root {
     --bg-primary: #1a2c38;
@@ -7,13 +14,17 @@
     --bg-tertiary: #2f4553;
     --bg-input: #0f212e;
 
-    --accent-green: #00e701;
-    --accent-green-hover: #00c700;
+    --accent-green: #1475e1;
+    --accent-green-hover: #0f5cc0;
     --accent-blue: #1475e1;
+    --accent: #1475e1;
+    --accent-hover: #0f5cc0;
     --accent-orange: #f7931a;
     --accent-yellow: #ffc107;
     --accent-red: #ed4245;
     --accent-purple: #9c27b0;
+
+    --color-positive: #00e701;
 
     --text-primary: #ffffff;
     --text-secondary: #b1bad3;
@@ -109,7 +120,7 @@ body {
 }
 
 .logo-img {
-    height: 32px;
+    height: 40px;
     width: auto;
     display: block;
 }
@@ -214,8 +225,6 @@ body {
 }
 
 .wallet-balance-icon {
-    width: 18px;
-    height: 18px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
@@ -246,6 +255,7 @@ body {
     color: var(--text-primary);
     letter-spacing: 0.3px;
     min-width: 80px;
+    font-family: 'ProximaNova', 'Inter', sans-serif;
 }
 
 .wallet-flag {
@@ -527,7 +537,7 @@ body {
 }
 
 .wallet-tx-amount.positive {
-    color: var(--accent-green);
+    color: var(--color-positive);
 }
 
 .wallet-tx-amount.negative {
@@ -646,8 +656,8 @@ body {
 }
 
 .crypto-dropdown-item.selected {
-    background: rgba(0, 231, 1, 0.08);
-    border: 1px solid rgba(0, 231, 1, 0.2);
+    background: rgba(20, 117, 225, 0.08);
+    border: 1px solid rgba(20, 117, 225, 0.2);
 }
 
 .crypto-dropdown-icon {
@@ -803,7 +813,7 @@ body {
 }
 
 .wallet-toast-win .wallet-toast-desc {
-    color: #00e701;
+    color: var(--color-positive);
 }
 
 .wallet-toast-loss .wallet-toast-desc {
@@ -1050,7 +1060,7 @@ body {
 }
 
 .stat-icon {
-    color: var(--accent-green);
+    color: var(--color-positive);
 }
 
 /* ===== Game Container ===== */
@@ -1167,7 +1177,7 @@ body {
 .currency-icon {
     width: 20px;
     height: 20px;
-    background: linear-gradient(135deg, #f7931a, #ffb347);
+    background: linear-gradient(135deg, #c67a15, #d9933a);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1249,18 +1259,18 @@ body {
     background: var(--accent-green);
     border: none;
     border-radius: var(--radius-md);
-    color: #000;
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     transition: all var(--transition-fast);
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    color: #fff;
 }
 
 .bet-button:hover {
     background: var(--accent-green-hover);
-    box-shadow: 0 4px 20px rgba(0, 231, 1, 0.35);
+    box-shadow: 0 4px 20px rgba(20, 117, 225, 0.35);
 }
 
 .bet-button:active {
@@ -1380,13 +1390,13 @@ body {
 }
 
 .history-pill.medium {
-    background: rgba(0, 231, 1, 0.15);
-    color: var(--accent-green);
+    background: rgba(20, 117, 225, 0.15);
+    color: var(--color-positive);
 }
 
 .history-pill.high {
-    background: rgba(0, 231, 1, 0.2);
-    color: var(--accent-green);
+    background: rgba(20, 117, 225, 0.2);
+    color: var(--color-positive);
 }
 
 .history-pill.mega {
@@ -1541,7 +1551,7 @@ body {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--accent-green);
+    background: var(--color-positive);
     animation: blink 2s ease-in-out infinite;
 }
 
@@ -1745,11 +1755,11 @@ body {
     }
 
     .logo-img {
-        height: 24px;
+        height: 32px;
     }
 
     .app-main-wrapper {
-        padding-bottom: 64px;
+        padding-bottom: 72px;
     }
 
     /* Generic game container fallback */
@@ -1978,7 +1988,7 @@ body {
     }
 
     .bottom-nav {
-        height: 56px;
+        height: 72px;
     }
 
     .bottom-nav-item {
@@ -1996,7 +2006,7 @@ body {
     }
 
     .app-main-wrapper {
-        padding-bottom: 56px;
+        padding-bottom: 72px;
     }
 
     .recent-plays {
@@ -2044,7 +2054,7 @@ body {
 
 .game-controls-bar .control-btn.active-debug {
     background: #1a3a2a !important;
-    color: #00e701 !important;
+    color: #1475e1 !important;
 }
 
 .game-controls-bar .control-btn:hover {

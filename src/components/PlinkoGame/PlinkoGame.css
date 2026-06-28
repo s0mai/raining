@@ -74,7 +74,7 @@
 .big-win-payout {
     font-size: 36px;
     font-weight: 700;
-    color: #00e701;
+    color: #1475e1;
     margin-top: 16px;
 }
 
@@ -205,7 +205,7 @@
 .plinko-controls .logo {
     font-family: 'Dancing Script', cursive;
     font-size: 20px;
-    color: #00b4d8;
+    color: var(--text-primary);
 }
 
 .plinko-controls .control-btn {
@@ -223,7 +223,7 @@
 
 .plinko-controls .control-btn.active-debug {
     background: #1a3a2a !important;
-    color: #00e701 !important;
+    color: #1475e1 !important;
 }
 
 .plinko-controls .control-btn:hover {
@@ -431,8 +431,8 @@
 }
 
 .timeline-dot.win {
-    background: linear-gradient(135deg, #00e701, #00c801);
-    box-shadow: 0 2px 0 #006601, 0 4px 8px rgba(0, 231, 1, 0.3);
+    background: linear-gradient(135deg, #1475e1, #1a86f0);
+    box-shadow: 0 2px 0 #0d4f91, 0 4px 8px rgba(20, 117, 225, 0.3);
 }
 
 .timeline-dot.loss {
@@ -612,13 +612,13 @@
     bottom: auto;
     width: 24rem;
     background: #0f172a;
-    border: 2px solid #00e701;
+    border: 2px solid #1475e1;
     box-shadow: 0 8px 0 rgba(0, 150, 1, 0.4), 0 12px 24px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.1);
 }
 
 .debug-widget-header {
     background: #1a2c38;
-    border-bottom: 2px solid #00e701;
+    border-bottom: 2px solid #1475e1;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
     box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.2);
@@ -664,7 +664,7 @@
     padding: 16px;
     background: #1a2c38;
     border-radius: 6px;
-    border: 1px solid #00e701;
+    border: 1px solid #1475e1;
     box-shadow: 0 4px 0 rgba(0, 150, 1, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.2);
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     transform: translateY(-2px);
@@ -675,7 +675,7 @@
 }
 
 .debug-target .target-payout {
-    color: #00e701;
+    color: #1475e1;
 }
 
 .debug-path-row {
@@ -706,7 +706,7 @@
 }
 
 .debug-path-dot.right {
-    background: #00e701;
+    background: #1475e1;
     box-shadow: 0 4px 0 #009601, inset 0 2px 2px rgba(255, 255, 255, 0.3);
 }
 
@@ -782,15 +782,15 @@
 }
 
 .fairness-header {
-    background: linear-gradient(135deg, rgba(0, 231, 1, 0.1), rgba(0, 231, 1, 0.05));
-    border: 1px solid rgba(0, 231, 1, 0.2);
+    background: linear-gradient(135deg, rgba(20, 117, 225, 0.1), rgba(20, 117, 225, 0.05));
+    border: 1px solid rgba(20, 117, 225, 0.2);
     border-radius: 12px;
     padding: 16px 20px;
     margin-bottom: 20px;
 }
 
 .fairness-header h5 {
-    color: #00e701 !important;
+    color: #1475e1 !important;
     margin: 0 0 8px 0 !important;
 }
 
@@ -828,23 +828,23 @@
     font-size: 16px !important;
     font-weight: 700 !important;
     border-radius: 8px !important;
-    background: #00e701 !important;
+    background: #1475e1 !important;
     color: #000 !important;
     border: none !important;
     transform: translateY(-4px);
-    box-shadow: 0 4px 0 #006601, 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 4px 0 #0d4f91, 0 4px 8px rgba(0, 0, 0, 0.3) !important;
     transition: all 0.15s ease !important;
 }
 
 .fairness-verify-btn:hover {
-    background: #00c801 !important;
+    background: #1a86f0 !important;
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 #006601, 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 2px 0 #0d4f91, 0 2px 6px rgba(0, 0, 0, 0.3) !important;
 }
 
 .fairness-verify-btn:active {
     transform: translateY(0);
-    box-shadow: 0 0 0 #006601 !important;
+    box-shadow: 0 0 0 #0d4f91 !important;
 }
 
 /* ==========================================================

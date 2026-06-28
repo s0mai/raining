@@ -44,6 +44,9 @@ import PlayerResults from './PlayerResults'
 import ProvablyFair from '../../utils/ProvablyFair'
 import { useWallet } from '../../context/WalletContext'
 import GameControls from '../GameControls'
+import useSound from '../../hooks/useSound'
+import CryptoImg from '../CryptoImg'
+import { cryptos } from '../../data/cryptos'
 import './CrashGame.css'
 
 const { Text, Title, Paragraph } = Typography
@@ -56,21 +59,21 @@ const PHASE = {
 }
 
 function CrashGame() {
-    const { balance, placeBet, addWinnings, showToast } = useWallet()
+    const { balance, placeBet, addWinnings, showToast, activeCurrency, t } = useWallet()
+    const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     const [phase, setPhase] = useState(PHASE.WAITING)
     const [multiplier, setMultiplier] = useState(1.00)
     const [countdown, setCountdown] = useState(5)
     const [crashPoint, setCrashPoint] = useState(0)
     const [elapsedTime, setElapsedTime] = useState(0)
-    const [history, setHistory] = useState([
-        3.21, 1.47, 2.89, 5.84, 169.00, 1.06, 9.47, 5.75, 1.43, 1.22,
-        4.77, 1.31, 2.15, 8.34, 1.89, 3.67, 12.45, 1.02, 6.23, 1.78,
-        2.44, 4.12, 1.56, 7.89, 2.33
-    ])
+    const randomCrashPoint = () => Math.max(1.01, parseFloat(Math.min(1000, 0.99 / Math.random()).toFixed(2)))
+
+    const [history, setHistory] = useState(() => Array.from({ length: 25 }, () => randomCrashPoint()))
     const [betPlaced, setBetPlaced] = useState(false)
     const [betAmount, setBetAmount] = useState(0)
     const [userBetData, setUserBetData] = useState(null)
     const [soundEnabled, setSoundEnabled] = useState(true)
+    const sound = useSound(soundEnabled)
     const activeBetRef = useRef(0)
 
     // Settings for optional features
@@ -87,6 +90,7 @@ function CrashGame() {
     // History and Stats logic
     const [gameRecords, setGameRecords] = useState([])
     const widgetRef = useRef(null)
+    const dragHandlersRef = useRef({ move: null, up: null })
     const chartCanvasRef = useRef(null)
     const chartInstanceRef = useRef(null)
     const [hoveredProfitValue, setHoveredProfitValue] = useState(null)
@@ -157,8 +161,10 @@ function CrashGame() {
                 addWinnings(activeBetRef.current)
                 activeBetRef.current = 0
             }
+            if (dragHandlersRef.current.move) document.removeEventListener('mousemove', dragHandlersRef.current.move)
+            if (dragHandlersRef.current.up) document.removeEventListener('mouseup', dragHandlersRef.current.up)
         }
-    }, [])
+    }, [addWinnings])
 
     // Draggable Live Stats logic
     const handleDragStart = useCallback((e) => {
@@ -187,8 +193,10 @@ function CrashGame() {
         const handleMouseUp = () => {
             document.removeEventListener('mousemove', handleMouseMove)
             document.removeEventListener('mouseup', handleMouseUp)
+            dragHandlersRef.current = { move: null, up: null }
         }
 
+        dragHandlersRef.current = { move: handleMouseMove, up: handleMouseUp }
         document.addEventListener('mousemove', handleMouseMove)
         document.addEventListener('mouseup', handleMouseUp)
     }, [])
@@ -330,7 +338,8 @@ function CrashGame() {
             if (betPlaced) {
                 // User didn't cash out in time, lost bet
                 profit = -userBetData.amount
-                showToast('loss', 'You Lost!', `-₿${userBetData.amount.toFixed(2)} — Crashed @${crashMultiplier.toFixed(2)}×`, 4000)
+                sound.play('limboLose')
+                showToast('loss', t('game.you_lost'), `-$${userBetData.amount.toFixed(2)} — ${t('crash.crashed_at')}${crashMultiplier.toFixed(2)}×`, 4000)
             } else {
                 // User cashed out
                 profit = parseFloat(userBetData.profit) - userBetData.amount
@@ -350,7 +359,7 @@ function CrashGame() {
         activeBetRef.current = 0
         setBetPlaced(false)
         setTimeout(startCountdown, 3000)
-    }, [startCountdown, userBetData, betPlaced, showToast])
+    }, [startCountdown, userBetData, betPlaced, showToast, sound])
 
     // Handle player cashout notification
     const handlePlayerCashout = useCallback((cashoutData) => {
@@ -424,7 +433,7 @@ function CrashGame() {
 
     const handleBet = (amount) => {
         if (amount > balance) {
-            showToast('error', 'Insufficient Balance', `You need ₿${amount.toFixed(2)} but only have ₿${balance.toFixed(2)}`)
+            showToast('error', t('game.insufficient_balance'), `You need $${amount.toFixed(2)} but only have $${balance.toFixed(2)}`)
             return
         }
         placeBet(amount)
@@ -434,12 +443,13 @@ function CrashGame() {
         setUserBetData({
             name: 'You',
             amount: amount,
-            currency: { symbol: '₿', color: '#f7931a', name: 'BTC' },
+            currency: { symbol: '$', color: '#f7931a', name: 'BTC' },
             active: true,
             cashoutAt: null,
             profit: null
         })
-        showToast('bet', 'Bet Placed', `₿${amount.toFixed(2)}`, 2500)
+        sound.play('bet')
+        showToast('bet', t('game.bet_placed'), `$${amount.toFixed(2)}`, 2500)
     }
 
     // Handle cancel bet
@@ -449,7 +459,7 @@ function CrashGame() {
             addWinnings(betAmount)
             setBetPlaced(false)
             setUserBetData(null)
-            showToast('info', 'Bet Cancelled', `₿${betAmount.toFixed(2)} refunded`, 2500)
+            showToast('info', t('game.bet_cancelled'), `$${betAmount.toFixed(2)} refunded`, 2500)
         }
     }
 
@@ -468,14 +478,15 @@ function CrashGame() {
                 profit: winAmount.toFixed(2)
             } : null)
 
-            showToast('win', 'You Won!', `+₿${profit.toFixed(2)} at ${multiplier.toFixed(2)}×`, 4000)
+            sound.play('win')
+            showToast('win', t('game.you_won'), `+$${profit.toFixed(2)} at ${multiplier.toFixed(2)}×`, 4000)
         }
     }
 
     // Copy to clipboard
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text)
-        messageApi.success('Copied to clipboard!')
+        messageApi.success(t('game.copied_clipboard'))
     }
 
     // Handle client seed change
@@ -530,7 +541,7 @@ function CrashGame() {
                             <button
                                 className={`footer-btn ${historyDrawerOpen ? 'active' : ''}`}
                                 onClick={() => setHistoryDrawerOpen(true)}
-                                title="Play History & Dashboard"
+                                title={t('plinko.play_history')}
                             >
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
@@ -539,7 +550,7 @@ function CrashGame() {
                             <button
                                 className={`footer-btn ${statsDrawerOpen ? 'active' : ''}`}
                                 onClick={() => setStatsDrawerOpen(true)}
-                                title="Live Stats"
+                                title={t('plinko.live_stats')}
                             >
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M16 11.78l4.24-7.33 1.73 1-5.23 9.05-6.51-3.75L5.46 19H22v2H2V3h2v14.54L9.5 8z" />
@@ -548,7 +559,7 @@ function CrashGame() {
                             <button
                                 className="footer-btn"
                                 onClick={() => setFairnessModalOpen(true)}
-                                title="Provably Fair"
+                                title={t('controls.provably_fair')}
                             >
                                 <SafetyCertificateOutlined style={{ fontSize: 18 }} />
                             </button>
@@ -558,13 +569,14 @@ function CrashGame() {
 
                 {/* Game Display */}
                 <div className="game-display" ref={gameDisplayRef}>
-                    <GameHistory history={history} />
+                    <GameHistory history={history} t={t} />
 
                     <GameChart
                         phase={phase}
                         multiplier={multiplier}
                         elapsedTime={elapsedTime}
                         countdown={countdown}
+                        t={t}
                     />
 
                     {/* Player Results (floating on chart) */}
@@ -586,7 +598,7 @@ function CrashGame() {
                             title={
                                 <div>
                                     <div style={{ marginBottom: 8 }}>
-                                        <Text style={{ color: '#fff' }}>Show Player Bets</Text>
+                                        <Text style={{ color: '#fff' }}>{t('crash.show_bets')}</Text>
                                         <Switch
                                             size="small"
                                             checked={showPlayerBets}
@@ -595,7 +607,7 @@ function CrashGame() {
                                         />
                                     </div>
                                     <div>
-                                        <Text style={{ color: '#fff' }}>Show Player Results</Text>
+                                        <Text style={{ color: '#fff' }}>{t('crash.show_results')}</Text>
                                         <Switch
                                             size="small"
                                             checked={showPlayerResults}
@@ -622,9 +634,9 @@ function CrashGame() {
                                     onChange={(e) => setLayout(e.target.value)}
                                     size="small"
                                 >
-                                    <Radio.Button value="default">Default</Radio.Button>
-                                    <Radio.Button value="compact">Compact</Radio.Button>
-                                    <Radio.Button value="wide">Wide</Radio.Button>
+                                    <Radio.Button value="default">{t('crash.default')}</Radio.Button>
+                                    <Radio.Button value="compact">{t('crash.compact')}</Radio.Button>
+                                    <Radio.Button value="wide">{t('crash.wide')}</Radio.Button>
                                 </Radio.Group>
                             }
                             trigger="click"
@@ -646,10 +658,10 @@ function CrashGame() {
                     <div className="widget-header" onMouseDown={handleDragStart}>
                         <div className="widget-title">
                             <LineChartOutlined style={{ fontSize: 20, color: '#94a3b8' }} />
-                            <span>Live Stats</span>
+                            <span>{t('plinko.live_stats')}</span>
                         </div>
                         <div className="widget-actions">
-                            <Tooltip title="Reset Live Stats" placement="topRight">
+                            <Tooltip title={t('plinko.reset_stats')} placement="topRight">
                                 <button className="widget-btn-icon" onMouseDown={(e) => e.stopPropagation()} onClick={() => setGameRecords([])}>
                                     <ReloadOutlined />
                                 </button>
@@ -664,19 +676,19 @@ function CrashGame() {
                         {/* Profit Overview */}
                         <div className="profit-box">
                             <div className="profit-main">
-                                <p className="label">Profit</p>
-                                <p className="value" style={{ color: totalProfit >= 0 ? '#4ade80' : '#f87171' }}>
-                                    ₿{totalProfit.toFixed(2)}
+                                <p className="label">{t('plinko.profit')}</p>
+                                <p className="value" style={{ color: totalProfit >= 0 ? '#4ade80' : '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                                    <CryptoImg crypto={selectedCrypto} size={14} /> ${totalProfit.toFixed(2)}
                                 </p>
                             </div>
                             <div className="profit-divider"></div>
                             <div className="profit-stats">
                                 <div className="stat-row">
-                                    <p className="label">Wins</p>
+                                    <p className="label">{t('plinko.wins')}</p>
                                     <p className="value" style={{ color: '#4ade80' }}>{winsCount.toLocaleString()}</p>
                                 </div>
                                 <div className="stat-row">
-                                    <p className="label">Losses</p>
+                                    <p className="label">{t('plinko.losses')}</p>
                                     <p className="value" style={{ color: '#f87171' }}>{lossesCount.toLocaleString()}</p>
                                 </div>
                             </div>
@@ -684,10 +696,10 @@ function CrashGame() {
 
                         {/* Chart.js Container */}
                         <div className="chart-box" onMouseLeave={() => setHoveredProfitValue(null)}>
-                            <p className="label">Profit History</p>
+                            <p className="label">{t('plinko.profit_history')}</p>
                             {hoveredProfitValue !== null && (
-                                <p className="hovered-value" style={{ color: hoveredProfitValue >= 0 ? '#4ade80' : '#f87171' }}>
-                                    {hoveredProfitValue >= 0 ? '' : '-'}₿{Math.abs(hoveredProfitValue).toFixed(2)}
+                                <p className="hovered-value" style={{ color: hoveredProfitValue >= 0 ? '#4ade80' : '#f87171', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    {hoveredProfitValue >= 0 ? '' : '-'}<CryptoImg crypto={selectedCrypto} size={14} />${Math.abs(hoveredProfitValue).toFixed(2)}
                                 </p>
                             )}
                             <div className="canvas-wrapper">
@@ -703,7 +715,7 @@ function CrashGame() {
                 title={
                     <Space className="history-window-header-title">
                         <div className="icon-wrapper"><ThunderboltOutlined /></div>
-                        <span>Play History & Dashboard</span>
+                        <span>{t('plinko.play_history')}</span>
                     </Space>
                 }
                 centered
@@ -717,13 +729,13 @@ function CrashGame() {
                 <div className="history-window-content">
                     {/* Achievements */}
                     <div className="dashboard-section">
-                        <div className="section-title">Milestones</div>
+                        <div className="section-title">{t('plinko.milestones')}</div>
                         <div className="achievements-row">
                             {(() => {
                                 const achievements = [
-                                    { id: 'first-drop', title: 'First Drop', unlocked: gameRecords.length > 0, icon: <StarOutlined /> },
-                                    { id: 'big-win', title: 'Big Win 20×', unlocked: gameRecords.some(w => w.multiplier >= 20 && w.profit >= 0), icon: <TrophyOutlined /> },
-                                    { id: 'hot-streak', title: 'Hot streak 5+', unlocked: maxStreak >= 5, icon: <FireOutlined /> },
+                                    { id: 'first-drop', title: t('plinko.first_drop'), unlocked: gameRecords.length > 0, icon: <StarOutlined /> },
+                                    { id: 'big-win', title: t('plinko.big_win'), unlocked: gameRecords.some(w => w.multiplier >= 20 && w.profit >= 0), icon: <TrophyOutlined /> },
+                                    { id: 'hot-streak', title: t('plinko.hot_streak'), unlocked: maxStreak >= 5, icon: <FireOutlined /> },
                                 ];
                                 return achievements.map(a => (
                                     <div key={a.id} className={`achievement-badge ${a.unlocked ? 'unlocked' : 'locked'}`}>
@@ -737,7 +749,7 @@ function CrashGame() {
 
                     {/* Streak timeline (last 20 results) */}
                     <div className="dashboard-section">
-                        <div className="section-title">Streak Timeline (Last 20)</div>
+                        <div className="section-title">{t('plinko.streak_timeline')}</div>
                         <div className="streak-timeline glass-panel">
                             {gameRecords.slice(-20).map((r, idx) => (
                                 <div key={r.id || idx} className={`timeline-dot ${r.profit >= 0 ? 'win' : 'loss'}`} title={`Crash: ${r.multiplier.toFixed(2)}x ${r.cashedOutAt ? `• Cashed out: ${r.cashedOutAt.toFixed(2)}x` : ''}`} />
@@ -747,28 +759,28 @@ function CrashGame() {
 
                     {/* History list */}
                     <div className="dashboard-section">
-                        <div className="section-title">Recent Transactions</div>
+                        <div className="section-title">{t('plinko.recent_tx')}</div>
                         <div className="history-list">
                             {gameRecords.length === 0 ? (
-                                <div className="empty-state">No transaction history yet</div>
+                                <div className="empty-state">{t('plinko.no_tx')}</div>
                             ) : (
                                 gameRecords.slice().reverse().map((r) => {
                                     const isWin = r.profit >= 0;
                                     return (
                                         <div key={r.id} className="history-card glass-panel">
                                             <div className="history-card-icon">
-                                                <div className="ball-color-circle medium" style={{ background: isWin ? 'linear-gradient(135deg, #00e701, #00a000)' : 'linear-gradient(135deg, #ff4d4f, #cf1322)' }}>
+                                                <div className="ball-color-circle medium" style={{ background: isWin ? 'linear-gradient(135deg, #1475e1, #0d4f91)' : 'linear-gradient(135deg, #ff4d4f, #cf1322)' }}>
                                                     {isWin ? <TrophyOutlined style={{ color: '#fff' }} /> : <CloseOutlined style={{ color: '#fff' }} />}
                                                 </div>
                                             </div>
                                             <div className="history-card-info">
-                                                <div className="history-card-name">{isWin ? 'Win' : 'Loss'}</div>
-                                                <div className="history-card-multiplier" style={{ color: isWin ? '#00e701' : '#ff4d4f' }}>
+                                                <div className="history-card-name">{isWin ? t('plinko.wins') : t('plinko.losses')}</div>
+                                                <div className="history-card-multiplier" style={{ color: isWin ? '#1475e1' : '#ff4d4f' }}>
                                                     {r.cashedOutAt ? r.cashedOutAt.toFixed(2) : r.multiplier.toFixed(2)}×
                                                 </div>
                                             </div>
-                                            <div className={`history-card-profit ${isWin ? 'profit-up' : 'profit-down'}`}>
-                                                {isWin ? '+' : '-'}₿{Math.abs(r.profit).toFixed(2)}
+                                            <div className={`history-card-profit ${isWin ? 'profit-up' : 'profit-down'}`} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                {isWin ? '+' : '-'}<CryptoImg crypto={selectedCrypto} size={12} />${Math.abs(r.profit).toFixed(2)}
                                             </div>
                                         </div>
                                     );
@@ -783,8 +795,8 @@ function CrashGame() {
             <Modal
                 title={
                     <Space>
-                        <SafetyCertificateOutlined style={{ color: '#00e701' }} />
-                        <span>Provably Fair</span>
+                        <SafetyCertificateOutlined style={{ color: '#1475e1' }} />
+                        <span>{t('controls.provably_fair')}</span>
                     </Space>
                 }
                 open={fairnessModalOpen}
@@ -798,17 +810,16 @@ function CrashGame() {
                 <div className="fairness-header">
                     <Title level={5}>
                         <CheckCircleOutlined style={{ marginRight: 8 }} />
-                        This game is provably fair
+                        {t('controls.fairness_desc')}
                     </Title>
                     <Paragraph>
-                        Uses HMAC-SHA256 to generate results from server seed + client seed + nonce.
-                        Rotate the seed to reveal and verify past results.
+                        {t('controls.fairness_desc_detail')}
                     </Paragraph>
                 </div>
 
                 {/* Active Seed Data */}
                 <div className="fairness-item">
-                    <span className="fairness-label">Server Seed (Hash)</span>
+                    <span className="fairness-label">{t('controls.server_seed')}</span>
                     <div className="fairness-value">
                         <Text copyable={{ text: fairnessData.serverSeedHash }} style={{ fontSize: 11, wordBreak: 'break-all' }}>
                             {fairnessData.serverSeedHash?.slice(0, 24)}...
@@ -817,7 +828,7 @@ function CrashGame() {
                 </div>
 
                 <div className="fairness-item">
-                    <span className="fairness-label">Client Seed</span>
+                    <span className="fairness-label">{t('controls.client_seed')}</span>
                     <div className="fairness-value" style={{ display: 'flex', gap: 6 }}>
                         <Input
                             size="small"
@@ -830,7 +841,7 @@ function CrashGame() {
                 </div>
 
                 <div className="fairness-item">
-                    <span className="fairness-label">Nonce</span>
+                    <span className="fairness-label">{t('controls.nonce')}</span>
                     <div className="fairness-value">
                         <Text style={{
                             background: 'rgba(47, 69, 83, 0.5)',
@@ -844,7 +855,7 @@ function CrashGame() {
                 </div>
 
                 <div className="fairness-item">
-                    <span className="fairness-label">Last Result</span>
+                    <span className="fairness-label">{t('crash.last_result')}</span>
                     <div className="fairness-value">
                         <Tag
                             color={(history[0] || 1) < 2 ? 'error' : (history[0] || 1) < 10 ? 'success' : 'gold'}
@@ -861,10 +872,10 @@ function CrashGame() {
                 {revealedSeed && (
                     <div style={{ marginBottom: 12 }}>
                         <Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                            Previous Server Seed (Revealed)
+                            {t('crash.prev_seed')}
                         </Text>
                         <div className="fairness-item" style={{ marginTop: 6 }}>
-                            <span className="fairness-label">Seed</span>
+                            <span className="fairness-label">{t('crash.seed')}</span>
                             <div className="fairness-value">
                                 <Text copyable={{ text: revealedSeed.serverSeed }} style={{ fontSize: 10, wordBreak: 'break-all' }}>
                                     {revealedSeed.serverSeed.slice(0, 20)}...
@@ -872,9 +883,9 @@ function CrashGame() {
                             </div>
                         </div>
                         <div className="fairness-item">
-                            <span className="fairness-label">Hash</span>
+                            <span className="fairness-label">{t('crash.hash')}</span>
                             <div className="fairness-value">
-                                <Text style={{ fontSize: 10, wordBreak: 'break-all', color: '#00e701' }}>
+                                <Text style={{ fontSize: 10, wordBreak: 'break-all', color: '#1475e1' }}>
                                     {revealedSeed.serverSeedHash?.slice(0, 20)}...
                                 </Text>
                             </div>
@@ -890,7 +901,7 @@ function CrashGame() {
                     icon={<SyncOutlined />}
                     onClick={handleRotateSeed}
                 >
-                    Rotate Seed (Reveal Current)
+                    {t('crash.rotate_seed')}
                 </Button>
             </Modal>
         </div>

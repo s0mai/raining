@@ -1,20 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { useTonConnectUI } from '@tonconnect/ui-react'
 import { useWallet } from '../context/WalletContext'
-import { useTelegram } from '../hooks/useTelegram'
+import { useUserId } from '../context/UserContext'
 import CryptoImg from '../components/CryptoImg'
+import { cryptos } from '../data/cryptos'
 import './DepositPage.css'
-
-const cryptos = [
-    { id: 'btc', name: 'Bitcoin', symbol: 'BTC', color: '#f7931a', img: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
-    { id: 'eth', name: 'Ethereum', symbol: 'ETH', color: '#627eea', img: 'https://cdn.worldvectorlogo.com/logos/ethereum-eth.svg' },
-    { id: 'ton', name: 'Toncoin', symbol: 'TON', color: '#0088cc', img: 'https://cdn-icons-png.flaticon.com/256/12114/12114247.png' },
-    { id: 'ltc', name: 'Litecoin', symbol: 'LTC', color: '#345d9d', img: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg' },
-    { id: 'sol', name: 'Solana', symbol: 'SOL', color: '#9945ff', img: 'https://cryptologos.cc/logos/solana-sol-logo.svg' },
-    { id: 'usdt', name: 'Tether', symbol: 'USDT', color: '#26a17b', img: 'https://www.svgrepo.com/show/367256/usdt.svg' },
-]
 
 const COINGECKO_IDS = { btc: 'bitcoin', eth: 'ethereum', ton: 'the-open-network', ltc: 'litecoin', sol: 'solana', usdt: 'tether' }
 const API_BASE = import.meta.env.VITE_API_URL || ''
@@ -22,8 +14,8 @@ const IS_DEV = import.meta.env.DEV
 const PLATFORM_TON_WALLET = 'UQBbY_WYNPKoxPEplMIc6i_q_iJXzs4hpYU8G2WqYvZCr93W'
 
 function DepositPage() {
-    const { balance, updateBalance, syncBalance, showToast } = useWallet()
-    const { tg } = useTelegram()
+    const { balance, balances, totalBalance, activeCurrency, updateBalance, syncBalance, showToast, addTransaction, deposit, setBalances, t } = useWallet()
+    const { userId } = useUserId()
     const [tonConnectUI] = useTonConnectUI()
     const [selectedCrypto, setSelectedCrypto] = useState(null)
     const [activeTab, setActiveTab] = useState('deposit')
@@ -38,8 +30,9 @@ function DepositPage() {
     const [prices, setPrices] = useState({})
     const [depositUsd, setDepositUsd] = useState('')
     const [depositAmount, setDepositAmount] = useState('')
-
-    const userId = tg?.initDataUnsafe?.user?.id?.toString() || 'dev_user'
+    const [bonusPopup, setBonusPopup] = useState(null)
+    const prevBalRef = useRef(null)
+    const bonusClaimedRef = useRef(false)
 
     useEffect(() => {
         if (userId && userId !== 'dev_user') {
@@ -83,17 +76,37 @@ function DepositPage() {
         }
     }, [selectedCrypto])
 
-    // Poll balance when a deposit address is shown (non-TON)
+    // Poll balance when a deposit address is shown and apply 100% bonus
     useEffect(() => {
-        if (!depositInfo || depositInfo.status !== 'pending') return
-        const initialBalance = balance
+        if (!depositInfo || depositInfo.status === 'finished' || depositInfo.status === 'expired') return
+        const coin = selectedCrypto?.id
+        prevBalRef.current = balances[coin] || 0
+        bonusClaimedRef.current = false
+
         const interval = setInterval(async () => {
-            if (userId && userId !== 'dev_user') {
-                await syncBalance(userId)
-            }
+            if (!userId || userId === 'dev_user' || !coin) return
+            try {
+                const resp = await fetch(`${API_BASE}/api/balance?userId=${userId}`)
+                if (resp.ok) {
+                    const data = await resp.json()
+                    if (data.balances) {
+                        const newCoinBal = data.balances[coin] || 0
+                        const prevCoinBal = prevBalRef.current
+                        if (newCoinBal > prevCoinBal && !bonusClaimedRef.current) {
+                            const diff = newCoinBal - prevCoinBal
+                            bonusClaimedRef.current = true
+                            setBonusPopup({ amount: diff, coin })
+                            deposit(diff, coin)
+                            showToast('win', '100% Deposit Bonus!', `+${diff.toFixed(2)} bonus credited`, 6000)
+                        }
+                        prevBalRef.current = newCoinBal
+                        setBalances(data.balances)
+                    }
+                }
+            } catch (e) { /* ignore */ }
         }, 5000)
         return () => clearInterval(interval)
-    }, [depositInfo?.status])
+    }, [depositInfo?.status, selectedCrypto?.id])
 
     const estimatedCrypto = selectedCrypto && prices[selectedCrypto.id] && depositUsd
         ? parseFloat(depositUsd) / prices[selectedCrypto.id]
@@ -158,12 +171,13 @@ function DepositPage() {
                     throw new Error(data.error || 'Failed to create deposit')
                 }
                 setDepositInfo({
-                    status: 'pending',
+                    status: data.status || 'waiting',
                     address: data.address,
                     pay_amount: data.pay_amount,
                     pay_currency: data.pay_currency,
                     price_amount: data.price_amount,
                     payment_id: data.payment_id,
+                    invoice_url: data.invoice_url,
                 })
             }
         } catch (e) {
@@ -228,19 +242,21 @@ function DepositPage() {
         }
         const errors = {}
         if (!withdrawAddress.trim()) {
-            errors.address = 'Address cannot be empty'
+            errors.address = t('deposit.address_empty')
         }
+        const coinBalance = balances[selectedCrypto?.id] || 0
         const amount = parseFloat(withdrawAmount)
         if (isNaN(amount) || amount <= 0) {
-            errors.amount = 'Enter a valid amount'
-        } else if (amount > balance) {
-            errors.amount = 'Amount exceeds available balance'
+            errors.amount = t('deposit.invalid_amount')
+        } else if (amount > coinBalance) {
+            errors.amount = t('deposit.exceeds_balance')
         }
         if (Object.keys(errors).length > 0) {
             setWithdrawError(errors)
             return
         }
-        updateBalance(balance - amount)
+        updateBalance(coinBalance - amount)
+        addTransaction('withdraw', -amount, selectedCrypto.id)
         setSelectedCrypto(null)
         setWithdrawAddress('')
         setWithdrawAmount('')
@@ -256,12 +272,24 @@ function DepositPage() {
                         <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
                     </svg>
                 </Link>
-                <h1>Deposit</h1>
+                <h1>{t('deposit.title')}</h1>
             </div>
             <div className="deposit-balance">
-                <span className="deposit-balance-label">Total Balance</span>
-                <span className="deposit-balance-amount">${balance.toFixed(2)}</span>
+                <span className="deposit-balance-label">{selectedCrypto ? `${selectedCrypto.name} ${t('deposit.balance')}` : t('deposit.total_balance')}</span>
+                <span className="deposit-balance-amount">${selectedCrypto ? (balances[selectedCrypto.id] || 0).toFixed(2) : totalBalance.toFixed(2)}</span>
             </div>
+            {!selectedCrypto && (
+                <div className="deposit-bonus-banner">
+                    <div className="deposit-bonus-banner-glow" />
+                    <div className="deposit-bonus-banner-content">
+                        <div className="deposit-bonus-banner-left">
+                            <span className="deposit-bonus-banner-badge">100% BONUS</span>
+                            <span className="deposit-bonus-banner-text">First deposit doubled!</span>
+                        </div>
+                        <span className="deposit-bonus-banner-arrow">→</span>
+                    </div>
+                </div>
+            )}
             <div className="deposit-crypto-list">
                 {cryptos.map(crypto => (
                     <div key={crypto.id} className="deposit-crypto-item" onClick={() => openModal(crypto)}>
@@ -270,6 +298,7 @@ function DepositPage() {
                             <span className="deposit-crypto-name">{crypto.name}</span>
                             <span className="deposit-crypto-symbol">{crypto.symbol}</span>
                         </div>
+                        <span className="deposit-crypto-balance">${(balances[crypto.id] || 0).toFixed(2)}</span>
                     </div>
                 ))}
             </div>
@@ -294,7 +323,7 @@ function DepositPage() {
                                     <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
                                     <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
                                 </svg>
-                                Deposit
+                                {t('deposit.tab_deposit')}
                             </button>
                             <button
                                 className={`deposit-tab${activeTab === 'withdraw' ? ' active' : ''}`}
@@ -305,7 +334,7 @@ function DepositPage() {
                                     <polyline points="5 12 12 5 19 12" />
                                     <polyline points="2 19 22 19" />
                                 </svg>
-                                Withdraw
+                                {t('deposit.tab_withdraw')}
                             </button>
                         </div>
 
@@ -315,12 +344,12 @@ function DepositPage() {
                                     <>
                                         <div className="deposit-box">
                                             <div className="deposit-amount-field">
-                                                <label className="withdraw-label">Amount (USD)</label>
+                                                <label className="withdraw-label">{t('deposit.amount_usd')}</label>
                                                 <div className="withdraw-amount-row">
                                                     <input
                                                         type="number"
                                                         className="withdraw-input"
-                                                        placeholder="0.00"
+                                                        placeholder={t('deposit.placeholder_amount')}
                                                         value={depositUsd}
                                                         onChange={e => handleUsdChange(e.target.value)}
                                                     />
@@ -328,17 +357,17 @@ function DepositPage() {
                                             </div>
                                             {estimatedCrypto !== null && prices[selectedCrypto.id] > 0 && (
                                                 <div className="deposit-estimate-row">
-                                                    <span className="deposit-info-label">Estimated {selectedCrypto.symbol}</span>
+                                                    <span className="deposit-info-label">{t('deposit.estimated')} {selectedCrypto.symbol}</span>
                                                     <span className="deposit-estimate-value">~{estimatedCrypto.toFixed(6)}</span>
                                                 </div>
                                             )}
                                             {selectedCrypto.id === 'ton' && (
                                                 <div className="deposit-amount-field" style={{ marginTop: 8 }}>
-                                                    <label className="withdraw-label">Or enter TON amount</label>
+                                                    <label className="withdraw-label">{t('deposit.enter_ton')}</label>
                                                     <input
                                                         type="number"
                                                         className="withdraw-input"
-                                                        placeholder="0.00"
+                                                        placeholder={t('deposit.placeholder_amount')}
                                                         value={depositAmount}
                                                         onChange={e => setDepositAmount(e.target.value)}
                                                     />
@@ -350,59 +379,77 @@ function DepositPage() {
                                             onClick={handleInitiateDeposit}
                                             disabled={depositLoading}
                                         >
-                                            {depositLoading ? 'Creating...' : selectedCrypto.id === 'ton' ? (tonConnectUI.connected ? 'Send TON' : 'Connect Wallet') : 'Generate Deposit Address'}
+                                            {depositLoading ? t('deposit.creating') : selectedCrypto.id === 'ton' ? (tonConnectUI.connected ? t('deposit.send_ton') : t('deposit.connect_wallet')) : t('deposit.generate_address')}
                                         </button>
                                         {depositError && <p className="deposit-error-msg">{depositError}</p>}
                                     </>
                                 )}
 
-                                {depositInfo && depositInfo.status === 'pending' && (
+                                {depositInfo && depositInfo.status !== 'finished' && depositInfo.status !== 'expired' && (
                                     <>
-                                        <div className="deposit-qr-container">
-                                            <QRCodeSVG
-                                                value={depositInfo.address}
-                                                size={140}
-                                                bgColor="#ffffff"
-                                                fgColor="#000000"
-                                                level="M"
-                                                includeMargin={false}
-                                                style={{ borderRadius: 8 }}
+                                        {depositInfo.invoice_url && (
+                                            <iframe
+                                                src={depositInfo.invoice_url.replace(/\/\?/, '?')}
+                                                className="deposit-iframe"
+                                                title="NowPayments Payment"
+                                                allow="payment"
                                             />
-                                        </div>
-                                        <div className="deposit-info-row">
-                                            <span className="deposit-info-label">Send exactly</span>
-                                            <span className="deposit-info-value">{depositInfo.pay_amount} {depositInfo.pay_currency}</span>
-                                        </div>
-                                        {depositInfo.price_amount && (
-                                            <div className="deposit-info-row">
-                                                <span className="deposit-info-label">Value</span>
-                                                <span className="deposit-info-value">~${depositInfo.price_amount} USD</span>
-                                            </div>
                                         )}
-                                        <div className="deposit-address-row">
-                                            <input
-                                                type="text"
-                                                readOnly
-                                                value={depositInfo.address}
-                                                className="deposit-address-input"
-                                            />
-                                            <button className="deposit-copy-btn" onClick={() => handleCopy(depositInfo.address)}>
-                                                {copied ? (
-                                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#00e701" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                        <polyline points="20 6 9 17 4 12" />
-                                                    </svg>
-                                                ) : (
-                                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                                    </svg>
+                                        {depositInfo.address ? (
+                                            <>
+                                                <div className="deposit-qr-container">
+                                                    <QRCodeSVG
+                                                        value={depositInfo.address}
+                                                        size={140}
+                                                        bgColor="#ffffff"
+                                                        fgColor="#000000"
+                                                        level="M"
+                                                        includeMargin={false}
+                                                        style={{ borderRadius: 8 }}
+                                                    />
+                                                </div>
+                                                {depositInfo.pay_amount && (
+                                                    <div className="deposit-info-row">
+                                                        <span className="deposit-info-label">{t('deposit.send_exactly')}</span>
+                                                        <span className="deposit-info-value">{depositInfo.pay_amount} {depositInfo.pay_currency}</span>
+                                                    </div>
                                                 )}
-                                                <span>{copied ? 'Copied' : 'Copy'}</span>
-                                            </button>
-                                        </div>
-                                        <p className="deposit-address-hint">
-                                            Send only <strong>{depositInfo.pay_currency}</strong> to this address. Balance will update automatically after confirmation.
-                                        </p>
+                                                {depositInfo.price_amount && (
+                                                    <div className="deposit-info-row">
+                                                        <span className="deposit-info-label">{t('deposit.value')}</span>
+                                                        <span className="deposit-info-value">~${depositInfo.price_amount} USD</span>
+                                                    </div>
+                                                )}
+                                                <div className="deposit-address-row">
+                                                    <input
+                                                        type="text"
+                                                        readOnly
+                                                        value={depositInfo.address}
+                                                        className="deposit-address-input"
+                                                    />
+                                                    <button className="deposit-copy-btn" onClick={() => handleCopy(depositInfo.address)}>
+                                                        {copied ? (
+                                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#1475e1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                <polyline points="20 6 9 17 4 12" />
+                                                            </svg>
+                                                        ) : (
+                                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                                            </svg>
+                                                        )}
+                                                        <span>{copied ? t('deposit.copied') : t('deposit.copy')}</span>
+                                                    </button>
+                                                </div>
+                                                <p className="deposit-address-hint">
+                                                    Send only <strong>{depositInfo.pay_currency}</strong> to this address.
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <p className="deposit-address-hint" style={{ textAlign: 'center', marginTop: 8 }}>
+                                                Open the payment page above to complete your deposit.
+                                            </p>
+                                        )}
                                     </>
                                 )}
 
@@ -420,42 +467,62 @@ function DepositPage() {
                             <div className="deposit-tab-content">
                                 <div className="deposit-box">
                                     <div className="withdraw-balance-ref">
-                                        <span>Available Balance</span>
-                                        <span className="withdraw-balance-amount">${balance.toFixed(2)}</span>
+                                        <span>{t('deposit.available_balance').replace('${symbol}', selectedCrypto.symbol)}</span>
+                                        <span className="withdraw-balance-amount">${(balances[selectedCrypto.id] || 0).toFixed(2)}</span>
                                     </div>
                                     <div className="withdraw-field">
-                                        <label className="withdraw-label">Destination Address</label>
+                                        <label className="withdraw-label">{t('deposit.dest_address')}</label>
                                         <input
                                             type="text"
                                             className={`withdraw-input${withdrawError.address ? ' error' : ''}`}
-                                            placeholder={`Enter ${selectedCrypto.symbol} address`}
+                                            placeholder={t('deposit.enter_address').replace('${symbol}', selectedCrypto.symbol)}
                                             value={withdrawAddress}
                                             onChange={e => { setWithdrawAddress(e.target.value); setWithdrawError({ ...withdrawError, address: null }) }}
                                         />
                                         {withdrawError.address && <span className="withdraw-error-msg">{withdrawError.address}</span>}
                                     </div>
                                     <div className="withdraw-field">
-                                        <label className="withdraw-label">Amount</label>
+                                        <label className="withdraw-label">{t('deposit.amount')}</label>
                                         <div className="withdraw-amount-row">
                                             <input
                                                 type="number"
                                                 className={`withdraw-input${withdrawError.amount ? ' error' : ''}`}
-                                                placeholder="0.00"
+                                                placeholder={t('deposit.placeholder_amount')}
                                                 value={withdrawAmount}
                                                 onChange={e => { setWithdrawAmount(e.target.value); setWithdrawError({ ...withdrawError, amount: null }) }}
                                             />
-                                            <button className="withdraw-max-btn" onClick={() => setWithdrawAmount(balance.toString())}>
-                                                Max
+                                            <button className="withdraw-max-btn" onClick={() => setWithdrawAmount((balances[selectedCrypto.id] || 0).toString())}>
+                                                {t('deposit.max')}
                                             </button>
                                         </div>
                                         {withdrawError.amount && <span className="withdraw-error-msg">{withdrawError.amount}</span>}
                                     </div>
                                 </div>
                                 <button className="withdraw-confirm-btn" onClick={handleWithdraw}>
-                                    Confirm Withdrawal
+                                    {t('deposit.confirm_withdraw')}
                                 </button>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {bonusPopup && (
+                <div className="deposit-bonus-popup-overlay" onClick={() => setBonusPopup(null)}>
+                    <div className="deposit-bonus-popup" onClick={e => e.stopPropagation()}>
+                        <div className="deposit-bonus-popup-icon">
+                            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#ffd700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                            </svg>
+                        </div>
+                        <h2 className="deposit-bonus-popup-title">100% Deposit Bonus!</h2>
+                        <p className="deposit-bonus-popup-msg">
+                            Your deposit of <strong>${bonusPopup.amount.toFixed(2)}</strong> has been matched!
+                        </p>
+                        <p className="deposit-bonus-popup-sub">+${bonusPopup.amount.toFixed(2)} bonus credited</p>
+                        <button className="deposit-bonus-popup-btn" onClick={() => setBonusPopup(null)}>
+                            Let's Play!
+                        </button>
                     </div>
                 </div>
             )}

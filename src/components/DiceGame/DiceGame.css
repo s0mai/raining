@@ -285,7 +285,6 @@
     border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
-    transform: translateY(-1px);
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
@@ -307,7 +306,7 @@
 }
 
 .dice-history-roll.win {
-    color: var(--accent-green);
+    color: var(--color-positive);
 }
 
 .dice-history-roll.loss {
@@ -609,8 +608,8 @@
 }
 
 .dice-verify-result.valid {
-    background: rgba(0, 231, 1, 0.1);
-    color: var(--accent-green);
+    background: rgba(20, 117, 225, 0.1);
+    color: var(--color-positive);
 }
 
 .dice-verify-result.invalid {

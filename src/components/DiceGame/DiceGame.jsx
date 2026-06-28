@@ -1,19 +1,22 @@
 import { useState, useRef, useEffect } from 'react'
-import { InputNumber, Button } from 'antd'
+import { Button } from 'antd'
+import BetInput from '../BetInput'
 import { useWallet } from '../../context/WalletContext'
 import ProvablyFair from '../../utils/ProvablyFair'
 import GameControls from '../GameControls'
+import useSound from '../../hooks/useSound'
+import { cryptos } from '../../data/cryptos'
 import '../PlinkoGame/Sidebar.css'
 import './DiceGame.css'
 
 function DiceGame() {
-    const { balance, placeBet, addWinnings, showToast } = useWallet()
+    const { balance, placeBet, addWinnings, showToast, activeCurrency, t } = useWallet()
+    const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     const [betAmount, setBetAmount] = useState(1)
     const [target, setTarget] = useState(50)
     const [rollDirection, setRollDirection] = useState('under')
     const [rolling, setRolling] = useState(false)
     const [result, setResult] = useState(null)
-    const [history, setHistory] = useState([])
     const [fairnessData, setFairnessData] = useState({ serverSeedHash: '...', clientSeed: '...', nonce: 0 })
     const [clientSeedInput, setClientSeedInput] = useState('')
     const [verifyModal, setVerifyModal] = useState(false)
@@ -32,9 +35,11 @@ function DiceGame() {
     const animTimerRef = useRef(null)
     const [editMultiplier, setEditMultiplier] = useState(null)
     const [editWinChance, setEditWinChance] = useState(null)
+    const [soundEnabled, setSoundEnabled] = useState(true)
+    const sound = useSound(soundEnabled)
 
     const isUnder = rollDirection === 'under'
-    const winChance = isUnder ? (target - 1) : (100 - target - 1)
+    const winChance = isUnder ? target : (99.99 - target)
     const effectiveWinChance = Math.max(0.01, Math.min(99.99, winChance))
     const multiplier = ((100 / effectiveWinChance) * 0.96)
 
@@ -50,8 +55,10 @@ function DiceGame() {
                 addWinnings(activeBetRef.current)
                 activeBetRef.current = 0
             }
+            if (animTimerRef.current) clearTimeout(animTimerRef.current)
+            if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current)
         }
-    }, [])
+    }, [addWinnings])
 
     useEffect(() => {
         setEditMultiplier(null)
@@ -66,6 +73,7 @@ function DiceGame() {
     function handleDirectionChange(dir) {
         if (rolling) return
         setRollDirection(dir)
+        setTarget(prev => 100 - prev)
     }
 
     function handleSliderChange(val) {
@@ -83,7 +91,7 @@ function DiceGame() {
         if (isNaN(parsed) || parsed <= 0) return
         const wc = 100 / (parsed / 0.96)
         const clamped = Math.max(0.01, Math.min(99.99, wc))
-        const newTarget = isUnder ? Math.round(clamped + 1) : Math.round(100 - clamped - 1)
+        const newTarget = isUnder ? Math.round(clamped) : Math.round(99.99 - clamped)
         setTarget(Math.max(2, Math.min(98, newTarget)))
     }
 
@@ -99,7 +107,7 @@ function DiceGame() {
         const parsed = parseFloat(val)
         if (isNaN(parsed) || parsed <= 0) return
         const clamped = Math.max(0.01, Math.min(99.99, parsed))
-        const newTarget = isUnder ? Math.round(clamped + 1) : Math.round(100 - clamped - 1)
+        const newTarget = isUnder ? Math.round(clamped) : Math.round(99.99 - clamped)
         setTarget(Math.max(2, Math.min(98, newTarget)))
     }
 
@@ -118,6 +126,8 @@ function DiceGame() {
         setRolling(true)
         setResult(null)
         placeBet(betAmount)
+        sound.play('bet')
+        sound.play('diceRolling')
         activeBetRef.current = betAmount
 
         const pf = pfRef.current
@@ -140,37 +150,31 @@ function DiceGame() {
 
         const cube = cubeRef.current
         if (cube) {
+                    const cubePos = Math.min(95, Math.max(0, roll))
                     if (cubeVisibleRef.current) {
                                 cube.style.transition = 'left 0.6s ease'
-                                cube.style.left = (isUnder ? roll : (100 - roll)) + '%'
+                                cube.style.left = cubePos + '%'
                             } else {
                                 cube.style.transition = 'none'
-                                const offsetPos = Math.max(0, (isUnder ? roll : (100 - roll)) - 5)
+                                const offsetPos = Math.max(0, cubePos - 5)
                                 cube.style.left = offsetPos + '%'
                                 cube.style.opacity = '0'
                                 void cube.offsetHeight
                                 cube.style.transition = 'left 0.6s ease, opacity 0.4s ease'
-                                cube.style.left = (isUnder ? roll : (100 - roll)) + '%'
+                                cube.style.left = cubePos + '%'
                                 cube.style.opacity = '1'
                                 cubeVisibleRef.current = true
                             }
         }
 
-        const fd = fairnessData
-        setHistory(prev => [{
-            roll, won, direction: rollDirection, target,
-            betAmount, multiplier,
-            serverSeedHash: fd.serverSeedHash,
-            clientSeed: pf.clientSeed,
-            nonce: currentNonce,
-        }, ...prev].slice(0, 50))
-
         if (won) {
             const winAmount = betAmount * multiplier
             addWinnings(winAmount)
-            showToast('win', 'You Won!', `+₿${(winAmount - betAmount).toFixed(2)} at ${multiplier.toFixed(2)}×`, 3000)
+            sound.play('win')
+            showToast('win', t('game.you_won'), `+$${(winAmount - betAmount).toFixed(2)} at ${multiplier.toFixed(2)}×`, 3000)
         } else {
-            showToast('loss', 'You Lost', `-₿${betAmount.toFixed(2)}`, 3000)
+            sound.play('limboLose')
+            showToast('loss', t('game.you_lost'), `-$${betAmount.toFixed(2)}`, 3000)
         }
 
         setRolling(false)
@@ -201,7 +205,7 @@ function DiceGame() {
 
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
-            showToast('info', 'Copied!', '', 1500)
+            showToast('info', t('game.copied_clipboard'), '', 1500)
         })
     }
 
@@ -232,6 +236,7 @@ function DiceGame() {
     }
 
     return (
+        <>
         <div className="dice-game-page">
             <div className="dice-main">
                 <div className="dice-container">
@@ -278,7 +283,7 @@ function DiceGame() {
 
                         <div className="dice-info-box">
                             <div className="dice-info-section">
-                                <div className="dice-info-label">Multiplier</div>
+                                <div className="dice-info-label">{t('game.multiplier')}</div>
                                 <input
                                     className="dice-info-input"
                                     value={editMultiplier !== null ? editMultiplier : multiplier.toFixed(4)}
@@ -289,7 +294,7 @@ function DiceGame() {
                                 />
                             </div>
                             <div className="dice-info-section">
-                                <div className="dice-info-label">Roll {rollDirection === 'under' ? 'Under' : 'Over'}</div>
+                                <div className="dice-info-label">{t('dice.roll_dir')} {rollDirection === 'under' ? t('dice.roll_under') : t('dice.roll_over')}</div>
                                 <div className="dice-info-roll-row">
                                     <input
                                         className="dice-info-input dice-info-input-roll"
@@ -303,16 +308,16 @@ function DiceGame() {
                                         onClick={() => handleDirectionChange(rollDirection === 'under' ? 'over' : 'under')}
                                         disabled={rolling}
                                     >
-                                        <img src="/images/change.svg" alt="Change" className="dice-change-icon" />
+                                        <img src="/images/change.svg" alt={t('dice.change_alt')} className="dice-change-icon" />
                                     </button>
                                 </div>
                             </div>
                             <div className="dice-info-section">
-                                <div className="dice-info-label">Win Chance</div>
+                                <div className="dice-info-label">{t('game.win_chance')}</div>
                                 <input
                                     className="dice-info-input"
                                     value={editWinChance !== null ? editWinChance : effectiveWinChance.toFixed(2)}
-                                    onChange={e => setEditWinChance(e.target.value)}
+                                    onChange={e => handleWinChanceInput(e.target.value)}
                                     onBlur={e => { handleWinChanceInput(e.target.value); setEditWinChance(null) }}
                                     onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
                                     disabled={rolling}
@@ -323,15 +328,14 @@ function DiceGame() {
                     <div className="sidebar">
                             <div className="form-group">
                                 <div className="form-header">
-                                    <label className="form-label">Bet Amount</label>
+                                    <label className="form-label">{t('game.bet_amount')}</label>
                                 </div>
                                 <div className="input-row">
-                                    <InputNumber
+                                    <BetInput
                                         value={betAmount}
                                         onChange={setBetAmount}
                                         min={0}
-                                        addonBefore={<div className="btc-icon" style={{ background: 'linear-gradient(135deg, #f7931a, #ffb347)' }}>₿</div>}
-                                        controls={false}
+                                        crypto={selectedCrypto}
                                     />
                                     <Button.Group>
                                         <Button onClick={() => setBetAmount(prev => Math.max(0, prev / 2))}>½</Button>
@@ -341,66 +345,36 @@ function DiceGame() {
                             </div>
 
                             <button onClick={handleRoll} className="bet-button" disabled={rolling || betAmount <= 0 || betAmount > balance || !pfRef.current}>
-                                {rolling ? 'Rolling...' : 'Roll'}
+                                {rolling ? t('game.rolling') : t('game.bet')}
                             </button>
-
-                            <div className="form-group">
-                                <div className="dice-history-header">Recent Rolls</div>
-                                <div className="dice-history">
-                                    {history.length === 0 ? (
-                                        <div className="dice-history-empty">No rolls yet</div>
-                                    ) : (
-                                        history.map((item, i) => (
-                                            <div key={i} className="dice-history-item">
-                                                <div className="dice-history-left">
-                                                    <span className={`dice-history-roll ${item.won ? 'win' : 'loss'}`}>
-                                                        {item.roll.toFixed(2)}
-                                                    </span>
-                                                    <span className="dice-history-direction">
-                                                        {item.direction === 'under' ? '↓' : '↑'} {item.target}.00
-                                                    </span>
-                                                </div>
-                                                <div className="dice-history-right">
-                                                    <span className="dice-history-payout">
-                                                        {item.won ? '+' : ''}{(item.betAmount * item.multiplier).toFixed(2)}
-                                                    </span>
-                                                    <button className="dice-history-verify" onClick={() => openVerifyModal(item)} title="Verify">
-                                                        ✓
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
 
                             </div>
                     </div>
                 </div>
-                <GameControls gameName="Dice" />
+                <GameControls gameName="Dice" soundEnabled={soundEnabled} onSoundChange={setSoundEnabled} />
             </div>
 
             {verifyModal && (
                 <div className="dice-verify-overlay" onClick={() => setVerifyModal(false)}>
                     <div className="dice-verify-modal" onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div className="dice-verify-title">🛡️ Verify Roll</div>
+                            <div className="dice-verify-title">{t('dice.verify_roll')}</div>
                             <button className="dice-verify-close" onClick={() => setVerifyModal(false)}>✕</button>
                         </div>
                         <div className="dice-verify-group">
-                            <label className="dice-verify-label">Server Seed</label>
-                            <input className="dice-verify-input" value={verifyServerSeed} onChange={e => setVerifyServerSeed(e.target.value)} placeholder="Paste revealed server seed" />
+                            <label className="dice-verify-label">{t('dice.server_seed')}</label>
+                            <input className="dice-verify-input" value={verifyServerSeed} onChange={e => setVerifyServerSeed(e.target.value)} placeholder={t('dice.paste_server')} />
                         </div>
                         <div className="dice-verify-group">
-                            <label className="dice-verify-label">Client Seed</label>
-                            <input className="dice-verify-input" value={verifyClientSeed} onChange={e => setVerifyClientSeed(e.target.value)} placeholder="Client seed used" />
+                            <label className="dice-verify-label">{t('dice.client_seed')}</label>
+                            <input className="dice-verify-input" value={verifyClientSeed} onChange={e => setVerifyClientSeed(e.target.value)} placeholder={t('dice.client_seed_used')} />
                         </div>
                         <div className="dice-verify-group">
-                            <label className="dice-verify-label">Nonce</label>
-                            <input className="dice-verify-input" value={verifyNonce} onChange={e => setVerifyNonce(e.target.value)} placeholder="Nonce number" type="number" />
+                            <label className="dice-verify-label">{t('dice.nonce')}</label>
+                            <input className="dice-verify-input" value={verifyNonce} onChange={e => setVerifyNonce(e.target.value)} placeholder={t('dice.nonce_num')} type="number" />
                         </div>
                         <button className="dice-verify-submit" onClick={handleVerify} disabled={verifying}>
-                            {verifying ? 'Verifying...' : 'Verify'}
+                            {verifying ? t('dice.verifying') : t('dice.verify')}
                         </button>
                         {verifyOutput && (
                             <div className={`dice-verify-result ${verifyOutput.error ? 'invalid' : 'valid'}`}>
@@ -417,7 +391,7 @@ function DiceGame() {
                     </div>
                 </div>
             )}
-        </div>
+        </>
     )
 }
 

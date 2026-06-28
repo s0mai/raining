@@ -2,8 +2,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { ROW_COUNT_OPTIONS, AUTO_BET_INTERVAL_MS, getBinColors } from './constants';
 import './Sidebar.css';
-import { Tooltip, Tag, InputNumber, Button, Typography } from 'antd';
+import { Tooltip, Tag, Button, Typography } from 'antd';
+import BetInput from '../BetInput';
 import { TrophyOutlined, StarOutlined, FireOutlined } from '@ant-design/icons';
+import { useWallet } from '../../context/WalletContext';
+import CryptoImg from '../CryptoImg';
+import { cryptos } from '../../data/cryptos';
 
 const { Text } = Typography;
 
@@ -31,6 +35,8 @@ function Sidebar({
     currentStreak,
     maxStreak,
 }) {
+    const { activeCurrency, t } = useWallet();
+    const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0];
     const [betMode, setBetMode] = useState('manual'); // 'manual' | 'auto'
     const [autoBetInput, setAutoBetInput] = useState(0);
     const [autoBetsLeft, setAutoBetsLeft] = useState(null);
@@ -117,9 +123,9 @@ function Sidebar({
     }, [resetAutoBetInterval]);
 
     const riskLevels = [
-        { value: 'low', label: 'Low' },
-        { value: 'medium', label: 'Medium' },
-        { value: 'high', label: 'High' },
+        { value: 'low', label: t('game.low') },
+        { value: 'medium', label: t('game.medium') },
+        { value: 'high', label: t('game.high') },
     ];
 
     return (
@@ -131,36 +137,32 @@ function Sidebar({
                     onClick={() => setBetMode('manual')}
                     disabled={isAutoBetting}
                 >
-                    Manual
+                    {t('game.manual')}
                 </button>
                 <button
                     className={`bet-mode-tab ${betMode === 'auto' ? 'active' : ''}`}
                     onClick={() => setBetMode('auto')}
                     disabled={isAutoBetting}
                 >
-                    Auto
+                    {t('game.auto')}
                 </button>
             </div>
 
             {/* Bet Amount */}
             <div className="form-group">
                 <div className="form-header">
-                    <label htmlFor="betAmount" className="form-label" style={{ margin: 0 }}>Bet Amount</label>
-                    <Text type="secondary" style={{ margin: 0 }}>₿{(betAmount ?? 0).toFixed(2)}</Text>
+                    <label htmlFor="betAmount" className="form-label" style={{ margin: 0 }}>{t('game.bet_amount')}</label>
+                    <Text type="secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><CryptoImg crypto={selectedCrypto} size={14} /> ${(betAmount ?? 0).toFixed(2)}</Text>
                 </div>
                 <div className="input-row">
-                    <InputNumber
+                    <BetInput
                         id="betAmount"
                         value={betAmount}
                         onChange={(val) => setBetAmount(isNaN(Number(val)) ? 0 : Number(val))}
                         min={0}
-                        step={0.01}
                         disabled={isAutoBetting}
                         style={{ flex: 1 }}
-                        controls={false}
-                        formatter={(v) => `${v}`}
-                        parser={(v) => v.replace(/\$\s?|(,*)/g, '')}
-                        addonBefore={<div className="btc-icon">₿</div>}
+                        crypto={selectedCrypto}
                     />
                     <Button.Group>
                         <Button
@@ -178,10 +180,10 @@ function Sidebar({
                     </Button.Group>
                 </div>
                 {isBetAmountNegative && (
-                    <p className="error-text">This must be greater than or equal to 0.</p>
+                    <p className="error-text">{t('game.insufficient_balance')}</p>
                 )}
                 {isBetExceedBalance && (
-                    <p className="error-text">Can't bet more than your balance!</p>
+                    <p className="error-text">{t('game.insufficient_balance')}</p>
                 )}
             </div>
 
@@ -191,12 +193,12 @@ function Sidebar({
                 onClick={handleBetClick}
                 disabled={isDropBallDisabled}
             >
-                {betMode === 'manual' ? 'Drop Ball' : isAutoBetting ? 'Stop Autobet' : 'Start Autobet'}
+                {betMode === 'manual' ? t('game.drop_ball') : isAutoBetting ? t('game.stop_autobet') : t('game.start_autobet')}
             </button>
 
             {/* Risk Level */}
             <div className="form-group">
-                <label htmlFor="riskLevel" className="form-label">Risk</label>
+                <label htmlFor="riskLevel" className="form-label">{t('game.risk')}</label>
                 <select
                     id="riskLevel"
                     value={riskLevel}
@@ -212,7 +214,7 @@ function Sidebar({
 
             {/* Row Count */}
             <div className="form-group">
-                <label htmlFor="rowCount" className="form-label">Rows</label>
+                <label htmlFor="rowCount" className="form-label">{t('game.rows')}</label>
                 <select
                     id="rowCount"
                     value={rowCount}
@@ -230,8 +232,8 @@ function Sidebar({
             {betMode === 'auto' && (
                 <div className="form-group">
                     <div className="form-label-row">
-                        <label htmlFor="autoBetInput" className="form-label">Number of Bets</label>
-                        <span className="help-icon" title="Enter '0' for unlimited bets.">?</span>
+                        <label htmlFor="autoBetInput" className="form-label">{t('game.num_bets')}</label>
+                        <span className="help-icon" title={t('game.unlimited_hint')}>?</span>
                     </div>
                     <div className="auto-bet-input">
                         <input
@@ -249,7 +251,7 @@ function Sidebar({
                         )}
                     </div>
                     {isAutoBetInputNegative && (
-                        <p className="error-text">This must be greater than or equal to 0.</p>
+                        <p className="error-text">{t('game.insufficient_balance')}</p>
                     )}
                 </div>
             )}
@@ -260,7 +262,7 @@ function Sidebar({
                     <button
                         className={`footer-btn ${isSettingsOpen ? 'active' : ''}`}
                         onClick={onSettingsClick}
-                        title="Game Settings"
+                        title={t('controls.game_settings')}
                     >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66z" />
@@ -269,7 +271,7 @@ function Sidebar({
                     <button
                         className={`footer-btn ${isStatsOpen ? 'active' : ''}`}
                         onClick={onStatsClick}
-                        title="Live Stats"
+                        title={t('plinko.live_stats')}
                     >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M16 11.78l4.24-7.33 1.73 1-5.23 9.05-6.51-3.75L5.46 19H22v2H2V3h2v14.54L9.5 8z" />
@@ -282,7 +284,7 @@ function Sidebar({
             <div className="ball-selector-card sidebar-card">
                 <div className="ball-selector-header">
                     <StarOutlined />
-                    <span>Ball Type</span>
+                    <span>{t('plinko.ball_type')}</span>
                 </div>
                 <div className="ball-types-grid">
                     {Object.values(ballTypes || {}).map(ball => (
@@ -292,7 +294,7 @@ function Sidebar({
                                 <div>
                                     <div style={{ fontWeight: 600 }}>{ball.name}</div>
                                     <div>{ball.description}</div>
-                                    <div style={{ color: 'var(--text-secondary)' }}>Cost: {ball.cost}× bet</div>
+                                    <div style={{ color: 'var(--text-secondary)' }}>{t('plinko.cost')}: {ball.cost}× bet</div>
                                 </div>
                             }
                         >

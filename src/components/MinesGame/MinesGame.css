@@ -292,16 +292,16 @@
 }
 
 .bet-mode-tab.active {
-    background: #00e701;
+    background: #1475e1;
     color: #000;
     font-weight: 700;
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 #006601, 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 #0d4f91, 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .bet-mode-tab.active:active {
     transform: translateY(0);
-    box-shadow: 0 0 0 #006601;
+    box-shadow: 0 0 0 #0d4f91;
 }
 
 .bet-mode-tab:disabled {
@@ -348,7 +348,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: linear-gradient(135deg, #f7931a, #ffb347);
+    background: linear-gradient(135deg, #c67a15, #d9933a);
     color: #fff;
     font-weight: 800;
     font-size: 13px;
@@ -388,7 +388,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: linear-gradient(135deg, #f7931a, #ffb347) !important;
+    background: linear-gradient(135deg, #c67a15, #d9933a) !important;
     color: #fff !important;
     font-weight: 800;
     font-size: 13px;
@@ -406,7 +406,7 @@
 .mines-sidebar .ant-input-number:focus,
 .mines-sidebar .ant-input-number-focused {
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 rgba(0, 231, 1, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 rgba(20, 117, 225, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* Addon also presses down when input is focused */
@@ -414,7 +414,7 @@
 .mines-sidebar .ant-input-number-group-wrapper:focus-within .ant-input-number-group-addon,
 .mines-sidebar .ant-input-number-group:focus-within .ant-input-number-group-addon {
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 rgba(0, 231, 1, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 rgba(20, 117, 225, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .mines-sidebar .ant-input-number:disabled {
@@ -456,7 +456,7 @@
     border-top-right-radius: 8px;
     border-bottom-right-radius: 8px;
     background: #2a4f3d;
-    color: #00e701;
+    color: #1475e1;
 }
 
 .mines-sidebar .ant-btn-group .ant-btn:hover:not(:disabled) {
@@ -508,7 +508,7 @@
 .mines-select:active:not(:disabled),
 .mines-select:focus {
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 rgba(0, 231, 1, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 rgba(20, 117, 225, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .mines-select-wrapper {
@@ -529,7 +529,7 @@
 
 .input-with-controls:focus-within {
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 rgba(0, 231, 1, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 rgba(20, 117, 225, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .mines-input {
@@ -564,7 +564,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: linear-gradient(135deg, #f7931a, #ffb347);
+    background: linear-gradient(135deg, #c67a15, #d9933a);
     color: #fff;
     font-weight: 800;
     font-size: 9px;
@@ -605,8 +605,8 @@
 
 /* Main Bet Button */
 .btn-bet-mines {
-    background: #00e701;
-    color: #000;
+    background: #1475e1;
+    color: #fff;
     border: none;
     border-radius: 8px;
     padding: 16px;
@@ -618,18 +618,18 @@
     transition: all 0.15s ease;
     margin-top: 10px;
     transform: translateY(-6px);
-    box-shadow: 0 6px 0 #006601, 0 6px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 0 #0d4f91, 0 6px 10px rgba(0, 0, 0, 0.3);
 }
 
 .btn-bet-mines:hover:not(:disabled) {
-    background: #00c801;
+    background: #1a86f0;
     transform: translateY(-4px);
-    box-shadow: 0 4px 0 #006601, 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 0 #0d4f91, 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .btn-bet-mines:active:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 2px 0 #006601, 0 2px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 0 #0d4f91, 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .btn-bet-mines:disabled {
@@ -1130,13 +1130,13 @@
     bottom: auto;
     width: 24rem;
     background: #0f172a;
-    border: 2px solid #00e701;
+    border: 2px solid #1475e1;
     box-shadow: 0 8px 0 rgba(0, 150, 1, 0.4), 0 12px 24px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.1);
 }
 
 .debug-widget-header {
     background: #1a2c38;
-    border-bottom: 2px solid #00e701;
+    border-bottom: 2px solid #1475e1;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
     box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.2);
@@ -1182,7 +1182,7 @@
     padding: 16px;
     background: #1a2c38;
     border-radius: 6px;
-    border: 1px solid #00e701;
+    border: 1px solid #1475e1;
     box-shadow: 0 4px 0 rgba(0, 150, 1, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.2);
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     transform: translateY(-2px);
@@ -1193,7 +1193,7 @@
 }
 
 .debug-target .target-payout {
-    color: #00e701;
+    color: #1475e1;
 }
 
 .debug-path-row {
@@ -1279,8 +1279,8 @@
 
 /* Active debug button */
 .game-controls .control-btn.active-debug {
-    color: #00e701 !important;
-    background: rgba(0, 231, 1, 0.1) !important;
+    color: #1475e1 !important;
+    background: rgba(20, 117, 225, 0.1) !important;
 }
 
 /* 3D Box Modal Theme */
@@ -1305,14 +1305,14 @@
 }
 
 .fairness-header {
-    background: rgba(0, 231, 1, 0.08);
+    background: rgba(20, 117, 225, 0.08);
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 16px;
 }
 
 .fairness-header h5 {
-    color: #00e701 !important;
+    color: #1475e1 !important;
     margin-bottom: 6px !important;
 }
 

@@ -4,7 +4,7 @@ import { HistoryOutlined, RightOutlined } from '@ant-design/icons'
 
 const { Text } = Typography
 
-function GameHistory({ history }) {
+function GameHistory({ history, t }) {
     const [drawerOpen, setDrawerOpen] = useState(false)
 
     const getCategory = (multiplier) => {
@@ -47,7 +47,7 @@ function GameHistory({ history }) {
                 title={
                     <Space>
                         <HistoryOutlined />
-                        <span>Game History</span>
+                        <span>{t('crash.game_history')}</span>
                     </Space>
                 }
                 placement="right"
@@ -78,7 +78,7 @@ function GameHistory({ history }) {
                                     </Tag>
                                 </Space>
                                 <Text type="secondary" style={{ fontSize: 12 }}>
-                                    {index === 0 ? 'Just now' : `${index * 15}s ago`}
+                                    {index === 0 ? t('crash.just_now') : `${index * 15}${t('crash.seconds_ago')}`}
                                 </Text>
                             </List.Item>
                         )

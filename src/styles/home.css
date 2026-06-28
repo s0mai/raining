@@ -35,14 +35,14 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: rgba(0, 231, 1, 0.1);
+    background: rgba(20, 117, 225, 0.1);
     color: var(--accent-green);
     padding: 6px 16px;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 700;
     margin-bottom: 16px;
-    border: 1px solid rgba(0, 231, 1, 0.2);
+    border: 1px solid rgba(20, 117, 225, 0.2);
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -50,9 +50,9 @@
 .hero-badge .dot {
     width: 6px;
     height: 6px;
-    background-color: var(--accent-green);
+    background-color: var(--color-positive);
     border-radius: 50%;
-    box-shadow: 0 0 10px var(--accent-green);
+    box-shadow: 0 0 10px var(--color-positive);
 }
 
 .hero-content h1 {
@@ -226,13 +226,13 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 0 4px 10px;
+    padding: 8px 4px 10px;
 }
 
 .live-dot {
     width: 6px;
     height: 6px;
-    background-color: #00e701;
+    background-color: var(--color-positive);
     border-radius: 50%;
     box-shadow: 0 0 6px rgba(0, 231, 1, 0.6);
     animation: pulse-dot 1.5s ease-in-out infinite;

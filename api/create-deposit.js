@@ -2,6 +2,7 @@ import { setDepositAddress } from '../lib/storage.js'
 
 const NOWPAYMENTS_API = 'https://api.nowpayments.io/v1'
 const API_KEY = process.env.NOWPAYMENTS_API_KEY
+const SITE_URL = 'https://rainbets.vercel.app'
 
 const CURRENCY_MAP = {
     btc: 'btc',
@@ -16,7 +17,8 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' })
     }
 
-    const { userId, currency, amount } = req.body
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+    const { userId, currency, amount } = body || {}
     if (!userId || !currency) {
         return res.status(400).json({ error: 'Missing userId or currency' })
     }
@@ -35,8 +37,11 @@ export default async function handler(req, res) {
             price_amount: amount ? parseFloat(amount) : undefined,
             price_currency: 'usd',
             pay_currency: nowCurrency,
-            ipn_callback_url: 'https://rainbets.vercel.app/api/nowpayments-webhook',
+            ipn_callback_url: `${SITE_URL}/api/nowpayments-webhook`,
             order_id: `${userId}_${Date.now()}`,
+            order_description: `Deposit for user ${userId}`,
+            success_url: `${SITE_URL}/deposit?success=1`,
+            cancel_url: `${SITE_URL}/deposit`,
             is_fixed_rate: false,
             is_fee_paid_by_user: true,
         }
@@ -45,7 +50,7 @@ export default async function handler(req, res) {
             delete payload.price_amount
         }
 
-        const resp = await fetch(`${NOWPAYMENTS_API}/payment`, {
+        const resp = await fetch(`${NOWPAYMENTS_API}/invoice`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -58,19 +63,21 @@ export default async function handler(req, res) {
 
         if (!resp.ok) {
             console.error('NowPayments error:', data)
-            return res.status(500).json({ error: data.error || data.message || 'Failed to create deposit' })
+            return res.status(500).json({ error: data.error || data.message || 'Failed to create invoice' })
         }
 
-        await setDepositAddress(userId, currency, data.pay_address, data.payment_id)
+        await setDepositAddress(userId, currency, data.pay_address || data.payment_address, data.id || data.payment_id)
 
         res.json({
+            invoice_id: data.id,
+            invoice_url: data.invoice_url,
             payment_id: data.payment_id,
-            address: data.pay_address,
+            address: data.pay_address || data.payment_address,
             pay_amount: data.pay_amount,
             pay_currency: data.pay_currency,
             price_amount: data.price_amount,
             price_currency: data.price_currency,
-            status: data.payment_status,
+            status: data.payment_status || 'waiting',
             created_at: data.created_at,
             expired_at: data.expiration_estimate_date,
         })

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useWallet } from '../context/WalletContext'
 import '../styles/home.css'
 
 function AnimatedCount({ value }) {
@@ -26,32 +27,6 @@ function AnimatedCount({ value }) {
 
 const games = [
     {
-        id: 'crash',
-        name: 'Crash',
-        image: '/images/crash.png',
-        icon: (
-            <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" />
-            </svg>
-        ),
-        path: '/crash',
-        playersMin: 100,
-        playersMax: 300,
-    },
-    {
-        id: 'plinko',
-        name: 'Plinko',
-        image: '/images/plinko.png',
-        icon: (
-            <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L2 20h20L12 2zm0 4l6.5 12h-13L12 6z" />
-            </svg>
-        ),
-        path: '/plinko',
-        playersMin: 200,
-        playersMax: 500,
-    },
-    {
         id: 'dice',
         name: 'Dice',
         image: '/images/dice.png',
@@ -61,19 +36,6 @@ const games = [
             </svg>
         ),
         path: '/dice',
-        playersMin: 400,
-        playersMax: 700,
-    },
-    {
-        id: 'limbo',
-        name: 'Limbo',
-        image: '/images/limbo.png',
-        icon: (
-            <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-            </svg>
-        ),
-        path: '/limbo',
         playersMin: 400,
         playersMax: 700,
     },
@@ -90,6 +52,45 @@ const games = [
         playersMin: 200,
         playersMax: 400,
     },
+    {
+        id: 'limbo',
+        name: 'Limbo',
+        image: '/images/limbo.png',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+            </svg>
+        ),
+        path: '/limbo',
+        playersMin: 400,
+        playersMax: 700,
+    },
+    {
+        id: 'plinko',
+        name: 'Plinko',
+        image: '/images/plinko.png',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L2 20h20L12 2zm0 4l6.5 12h-13L12 6z" />
+            </svg>
+        ),
+        path: '/plinko',
+        playersMin: 200,
+        playersMax: 500,
+    },
+    {
+        id: 'crash',
+        name: 'Crash',
+        image: '/images/crash.png',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" />
+            </svg>
+        ),
+        path: '/crash',
+        playersMin: 100,
+        playersMax: 300,
+    },
 ]
 
 function randInt(min, max) {
@@ -97,6 +98,7 @@ function randInt(min, max) {
 }
 
 function HomePage() {
+    const { t } = useWallet()
     const [players, setPlayers] = useState(() =>
         Object.fromEntries(games.map(g => [g.id, randInt(g.playersMin, g.playersMax)]))
     )
@@ -121,20 +123,18 @@ function HomePage() {
         <div className="home-page-container">
             <div className="home-page-hero">
                 <div className="hero-content">
-                    <div className="hero-badge">
-                        <span className="dot"></span> Leading Crypto Casino
-                    </div>
-                    <h1 style={{ lineHeight: '1.2' }}>Win BIG with<br />
+
+                    <h1 style={{ lineHeight: '1.2' }}>{t('home.hero_title')}<br />
                         <span style={{ fontFamily: "'Dancing Script', cursive", color: '#00b4d8', fontSize: '1.2em', textShadow: '0 0 10px rgba(0, 180, 216, 0.4)' }}>Rainbet</span>
                     </h1>
-                    <p className="hero-desc">Play premium, provably fair casino games.</p>
+                    <p className="hero-desc">{t('home.hero_desc')}</p>
                 </div>
             </div>
 
             <div className="home-section">
                 <div className="section-header">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--accent-blue)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
-                    <h2 style={{ fontFamily: "'Dancing Script', cursive", fontSize: '32px', color: '#00b4d8', margin: 0 }}>Rainbet</h2>
+                    <span style={{ display: 'inline-block', width: 42, height: 42, backgroundColor: '#5eaded', mask: 'url(/images/minilogorainbet.png) center/contain no-repeat', WebkitMask: 'url(/images/minilogorainbet.png) center/contain no-repeat', verticalAlign: 'middle' }}></span>
+                    <h2 style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '32px', color: '#fff', margin: 0, fontWeight: 700 }}>{t('home.originals')}</h2>
                 </div>
 
                 <div className="stake-games-grid">
@@ -157,9 +157,6 @@ function HomePage() {
                                         <svg viewBox="0 0 24 24" width="24" height="24" fill="black"><path d="M8 5v14l11-7z" /></svg>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="stake-card-footer">
-                                <span className="game-name">{game.name}</span>
                             </div>
                             <div className="stake-card-players">
                                 <span className="live-dot"></span>

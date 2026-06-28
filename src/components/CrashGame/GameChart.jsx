@@ -4,7 +4,7 @@ import { WifiOutlined } from '@ant-design/icons'
 
 const { Text, Title } = Typography
 
-function GameChart({ phase, multiplier, elapsedTime, countdown }) {
+function GameChart({ phase, multiplier, elapsedTime, countdown, t }) {
     const canvasRef = useRef(null)
     const rocketRef = useRef(null)
     const exhaustRef = useRef(null)
@@ -259,14 +259,14 @@ function GameChart({ phase, multiplier, elapsedTime, countdown }) {
     }, [phase, multiplier, elapsedTime, maxTime, maxMultiplier])
 
     const getStatusText = () => {
-        if (phase === 'waiting') return `Starting in ${countdown.toFixed(1)}s`
-        if (phase === 'crashed') return `Crashed @${multiplier.toFixed(2)}×`
+        if (phase === 'waiting') return `${t('crash.starting_in')} ${countdown.toFixed(1)}s`
+        if (phase === 'crashed') return `${t('crash.crashed_at')}${multiplier.toFixed(2)}×`
         return null
     }
 
     const getMultiplierColor = () => {
         if (phase === 'crashed') return '#ed4245'
-        if (multiplier >= 10) return '#00e701'
+        if (multiplier >= 10) return '#1475e1'
         if (multiplier >= 5) return '#ffc107'
         if (multiplier >= 2) return '#f7931a'
         return '#ffffff'
@@ -280,19 +280,19 @@ function GameChart({ phase, multiplier, elapsedTime, countdown }) {
             <img
                 ref={rocketRef}
                 src="/images/spaceship.png"
-                alt="Rocket"
+                alt={t('crash.rocket_alt')}
                 style={{ position: 'absolute', width: '105px', height: 'auto', display: 'none', pointerEvents: 'none', zIndex: 10, filter: 'drop-shadow(0 0 10px rgba(247, 147, 26, 0.8))', willChange: 'transform, left, top' }}
             />
             <img
                 ref={exhaustRef}
                 src="/images/exhaust/exhaust02_preview.gif"
-                alt="Exhaust"
+                alt={t('crash.exhaust_alt')}
                 style={{ position: 'absolute', width: '150px', height: 'auto', display: 'none', pointerEvents: 'none', zIndex: 9, mixBlendMode: 'screen', filter: 'hue-rotate(340deg) saturate(2)', imageRendering: 'pixelated', willChange: 'transform, left, top' }}
             />
             <img
                 ref={explosionRef}
                 src="/images/explosions/normal_explosion.gif"
-                alt="Explosion"
+                alt={t('crash.explosion_alt')}
                 style={{ position: 'absolute', width: '250px', height: 'auto', display: 'none', pointerEvents: 'none', zIndex: 11, transform: 'translate(-50%, -50%)', mixBlendMode: 'screen', imageRendering: 'pixelated' }}
             />
 
@@ -360,8 +360,8 @@ function GameChart({ phase, multiplier, elapsedTime, countdown }) {
             {/* Network Status */}
             <div className="network-indicator">
                 <Badge status="success" />
-                <WifiOutlined style={{ color: '#00e701', marginRight: 4 }} />
-                <Text type="secondary" style={{ fontSize: 11 }}>Connected</Text>
+                <WifiOutlined style={{ color: '#1475e1', marginRight: 4 }} />
+                <Text type="secondary" style={{ fontSize: 11 }}>{t('crash.connected')}</Text>
             </div>
         </div>
     )

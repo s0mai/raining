@@ -16,14 +16,14 @@ const isDark = tg?.colorScheme !== 'light'
 const stakeTheme = {
     algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
-        colorPrimary: '#00e701',
+        colorPrimary: '#1475e1',
         colorBgBase: tg?.themeParams?.bg_color || '#0f212e',
         colorBgContainer: tg?.themeParams?.secondary_bg_color || '#1a2c38',
         colorBgElevated: '#2f4553',
         colorBorder: '#2f4553',
         colorText: tg?.themeParams?.text_color || '#ffffff',
         colorTextSecondary: '#b1bad3',
-        colorSuccess: '#00e701',
+        colorSuccess: '#1475e1',
         colorWarning: '#f7931a',
         colorError: '#ed4245',
         colorInfo: '#1475e1',
@@ -33,7 +33,7 @@ const stakeTheme = {
     components: {
         Button: {
             primaryColor: '#000000',
-            colorPrimaryHover: '#00c700',
+            colorPrimaryHover: '#0f5cc0',
         },
         Input: {
             colorBgContainer: '#0f212e',
@@ -54,10 +54,10 @@ const stakeTheme = {
             colorBorderSecondary: '#2f4553',
         },
         Slider: {
-            colorPrimaryBorderHover: '#00e701',
-            handleColor: '#00e701',
-            trackBg: '#00e701',
-            trackHoverBg: '#00c700',
+            colorPrimaryBorderHover: '#1475e1',
+            handleColor: '#1475e1',
+            trackBg: '#1475e1',
+            trackHoverBg: '#0f5cc0',
         },
         Tooltip: {
             colorBgSpotlight: '#2f4553',
