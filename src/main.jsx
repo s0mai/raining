@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { ConfigProvider, theme } from 'antd'
 import { TonConnectUIProvider } from '@tonconnect/ui-react'
 import { WalletProvider } from './context/WalletContext'
+import { UserProvider } from './context/UserContext'
 import { TelegramThemeProvider } from './hooks/useTelegram'
 import App from './App'
 import './styles/index.css'
@@ -73,9 +74,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <TelegramThemeProvider>
                 <ConfigProvider theme={stakeTheme}>
                     <BrowserRouter>
+                        <UserProvider>
                         <WalletProvider>
                             <App />
                         </WalletProvider>
+                        </UserProvider>
                     </BrowserRouter>
                 </ConfigProvider>
             </TelegramThemeProvider>

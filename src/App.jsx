@@ -4,8 +4,6 @@ import { App as AntApp } from 'antd'
 import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import RouteLoadingOverlay from './components/RouteLoadingOverlay'
-import { UserProvider } from './context/UserContext'
-
 const HomePage = lazy(() => import('./pages/HomePage'))
 const CrashPage = lazy(() => import('./pages/CrashPage'))
 const PlinkoPage = lazy(() => import('./pages/PlinkoPage'))
@@ -17,7 +15,6 @@ const DepositPage = lazy(() => import('./pages/DepositPage'))
 
 function App() {
     return (
-        <UserProvider>
         <AntApp>
             <ErrorBoundary>
                 <RouteLoadingOverlay />
@@ -35,7 +32,6 @@ function App() {
             </Routes>
             </ErrorBoundary>
         </AntApp>
-        </UserProvider>
     )
 }
 
