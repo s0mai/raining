@@ -141,7 +141,7 @@ function LeaderboardPage() {
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {entries.map((entry) => {
-                        const isMe = entry.userId === userId
+                        const isMe = String(entry.userId) === String(userId)
                         const vip = getVIPLevel(entry.score)
                         const badges = getBadges(entry)
                         const rs = RANK_STYLES[entry.rank] || null

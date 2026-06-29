@@ -20,13 +20,13 @@ export default async function handler(req, res) {
 
     const reqUserId = req.query.userId
     if (reqUserId) {
-        const inList = leaderboard.some(e => e.userId === reqUserId)
+        const inList = leaderboard.some(e => String(e.userId) === String(reqUserId))
         if (!inList) {
             const rankData = await getUserRankAndScore(reqUserId)
             if (rankData) {
-                const meta = await getUserMetadata(reqUserId) || {}
+                const meta = await getUserMetadata(String(reqUserId)) || {}
                 leaderboard.push({
-                    userId: reqUserId,
+                    userId: String(reqUserId),
                     rank: rankData.rank,
                     score: rankData.score,
                     displayName: meta.displayName || 'Player',
