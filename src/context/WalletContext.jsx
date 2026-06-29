@@ -140,6 +140,13 @@ export function WalletProvider({ children }) {
 
     const userCtx = useContext(UserContext)
     const userId = userCtx?.userId || 'dev_user'
+    const displayName = userCtx?.displayName || 'Player'
+    const photoUrl = userCtx?.photoUrl || null
+
+    const setBalances = useCallback((newBalances) => {
+        setBalancesState(newBalances)
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(newBalances)) } catch (e) { /* ignore */ }
+    }, [])
 
     // Sync balance from server to localStorage
     const syncFromServer = useCallback(async () => {
@@ -182,11 +189,6 @@ export function WalletProvider({ children }) {
         setTimeout(() => {
             setToasts(prev => prev.filter(t => t.id !== id))
         }, duration)
-    }, [])
-
-    const setBalances = useCallback((newBalances) => {
-        setBalancesState(newBalances)
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(newBalances)) } catch (e) { /* ignore */ }
     }, [])
 
     const setActiveCurrency = useCallback((currency) => {
@@ -310,7 +312,8 @@ export function WalletProvider({ children }) {
     }, [activeCurrency, syncToServer])
 
     // Deposit funds to a specific currency
-    const deposit = useCallback((amount, currency) => {
+    // Pass isBonus=true to skip totalDeposits increment (used for 100% deposit bonus)
+    const deposit = useCallback((amount, currency, isBonus) => {
         const amt = parseFloat(amount)
         const coin = currency || activeCurrency
         if (isNaN(amt) || amt <= 0) return
@@ -323,7 +326,7 @@ export function WalletProvider({ children }) {
 
             setTransactions(txs => [{
                 id: Date.now(),
-                type: 'deposit',
+                type: isBonus ? 'bonus' : 'deposit',
                 amount: amt,
                 currency: coin,
                 balance: newCoinBal,
@@ -333,14 +336,28 @@ export function WalletProvider({ children }) {
             return next
         })
 
-        setTotalDeposits(prev => {
-            const newTotal = parseFloat((prev + amt).toFixed(2))
-            try { localStorage.setItem(DEPOSITS_KEY, newTotal.toString()) } catch (e) { /* ignore */ }
-            return newTotal
-        })
+        if (!isBonus) {
+            setTotalDeposits(prev => {
+                const newTotal = parseFloat((prev + amt).toFixed(2))
+                try { localStorage.setItem(DEPOSITS_KEY, newTotal.toString()) } catch (e) { /* ignore */ }
+                return newTotal
+            })
+        }
 
-        syncToServer('win', coin, amt)
-    }, [activeCurrency, syncToServer])
+        if (!userId || userId === 'dev_user') return
+        if (!isBonus) {
+            fetch(`${API_BASE}/api/balance/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, coin, action: 'win', amount: amt, isDeposit: true }),
+            }).catch(() => {})
+        }
+        fetch(`${API_BASE}/api/leaderboard/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, displayName, photoUrl, depositAmount: isBonus ? amt : 0 }),
+        }).catch(() => {})
+    }, [activeCurrency, userId, displayName, photoUrl])
 
     const addTransaction = useCallback((type, amount, currency) => {
         setTransactions(txs => [{
