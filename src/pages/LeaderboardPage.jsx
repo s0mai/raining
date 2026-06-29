@@ -55,7 +55,7 @@ const RANK_STYLES = {
 
 function LeaderboardPage() {
     const navigate = useNavigate()
-    const { t, activeFiat, totalBalance } = useWallet()
+    const { t, activeFiat } = useWallet()
     const { userId, displayName, photoUrl } = useUserId()
     const [entries, setEntries] = useState([])
     const [loading, setLoading] = useState(true)
@@ -72,10 +72,10 @@ function LeaderboardPage() {
             await fetch(`${API_BASE}/api/leaderboard/sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, displayName, photoUrl, depositAmount: totalBalance }),
+                body: JSON.stringify({ userId, displayName, photoUrl }),
             })
         } catch { /* ignore */ }
-    }, [userId, displayName, photoUrl, totalBalance])
+    }, [userId, displayName, photoUrl])
 
     const fetchLeaderboard = useCallback(async () => {
         try {
@@ -157,7 +157,7 @@ function LeaderboardPage() {
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {entries.map((entry) => {
-                        const isMe = String(entry.userId) === String(userId)
+                        const isMe = entry.isCurrentUser || String(entry.userId) === String(userId)
                         const vip = getVIPLevel(entry.score)
                         const badges = getBadges(entry)
                         const rs = RANK_STYLES[entry.rank] || null

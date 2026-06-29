@@ -446,6 +446,31 @@ function ProfilePage() {
         isObsidian = true
     }
 
+    const [lbRank, setLbRank] = useState(null)
+    const [lbScore, setLbScore] = useState(0)
+    const API_BASE = import.meta.env.VITE_API_URL || ''
+
+    useEffect(() => {
+        if (!userId || userId === 'dev_user') return
+        fetch(`${API_BASE}/api/leaderboard/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, displayName, photoUrl }),
+        }).then(r => r.json()).then(data => {
+            if (data.rank > 0) {
+                setLbRank(data.rank)
+                setLbScore(data.score)
+            }
+        }).catch(() => {})
+    }, [userId, displayName, photoUrl, API_BASE])
+
+    const topBadges = []
+    if (lbRank !== null) {
+        if (lbRank <= 100) topBadges.push('top100')
+        if (lbRank <= 3) topBadges.push(`top${lbRank}`)
+        if (lbScore >= 1000) topBadges.push('verified')
+    }
+
     return (
         <div className="profile-page" style={{
             maxWidth: 400,
@@ -484,9 +509,12 @@ function ProfilePage() {
 
             <div className="profile-name" style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
                 {displayName}
-                {totalDeposits >= 1000 && (
+                {(totalDeposits >= 1000 || lbScore >= 1000) && (
                     <img src="/images/badges/verified.png" alt="Verified" title="Verified" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                 )}
+                {topBadges.map(b => (
+                    <img key={b} src={`/images/badges/${b}.png`} alt={b} title={b} style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                ))}
             </div>
 
             {level ? (
@@ -500,6 +528,12 @@ function ProfilePage() {
                 <div className="vip-badge" style={{ background: 'var(--bg-tertiary)' }}>
                     <span className="vip-badge-icon">{getVIPImg('Bronze', 18)}</span>
                     <span style={{ color: 'var(--text-secondary)' }}>{t('profile.unranked')}</span>
+                </div>
+            )}
+
+            {lbRank !== null && (
+                <div style={{ color: 'var(--text-muted)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>{t('nav.leaderboard')}: #{lbRank}</span>
                 </div>
             )}
 

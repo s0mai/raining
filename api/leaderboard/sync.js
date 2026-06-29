@@ -1,4 +1,4 @@
-import { getUserRankAndScore, saveUserMetadata, getTotalDeposits, updateLeaderboardScore, incrementTotalDeposits, getBalances } from '../../lib/storage.js'
+import { getUserRankAndScore, saveUserMetadata, getTotalDeposits, updateLeaderboardScore, incrementTotalDeposits } from '../../lib/storage.js'
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -11,17 +11,8 @@ export default async function handler(req, res) {
     }
 
     let totalDeposits = await getTotalDeposits(userId)
-    if (totalDeposits === 0) {
-        let bootstrapAmount = depositAmount || 0
-        if (!bootstrapAmount) {
-            const balances = await getBalances(userId)
-            if (balances) {
-                bootstrapAmount = Object.values(balances).reduce((s, v) => s + v, 0)
-            }
-        }
-        if (bootstrapAmount > 0) {
-            totalDeposits = await incrementTotalDeposits(userId, bootstrapAmount)
-        }
+    if (totalDeposits === 0 && depositAmount > 0) {
+        totalDeposits = await incrementTotalDeposits(userId, depositAmount)
     } else if (totalDeposits > 0) {
         await updateLeaderboardScore(userId, totalDeposits)
     }

@@ -21,19 +21,23 @@ export default async function handler(req, res) {
     const reqUserId = req.query.userId
     if (reqUserId) {
         const inList = leaderboard.some(e => String(e.userId) === String(reqUserId))
-        if (!inList) {
+        if (inList) {
+            leaderboard = leaderboard.map(e => ({
+                ...e,
+                isCurrentUser: String(e.userId) === String(reqUserId),
+            }))
+        } else {
             const rankData = await getUserRankAndScore(reqUserId)
-            if (rankData) {
-                const meta = await getUserMetadata(String(reqUserId)) || {}
-                leaderboard.push({
-                    userId: String(reqUserId),
-                    rank: rankData.rank,
-                    score: rankData.score,
-                    displayName: meta.displayName || 'Player',
-                    photoUrl: meta.photoUrl || null,
-                    verified: rankData.score >= 1000,
-                })
-            }
+            const meta = await getUserMetadata(String(reqUserId)) || {}
+            leaderboard.push({
+                userId: String(reqUserId),
+                rank: rankData?.rank || 0,
+                score: rankData?.score || 0,
+                displayName: meta.displayName || 'Player',
+                photoUrl: meta.photoUrl || null,
+                verified: (rankData?.score || 0) >= 1000,
+                isCurrentUser: true,
+            })
         }
     }
 
