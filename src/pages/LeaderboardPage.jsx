@@ -59,6 +59,7 @@ function LeaderboardPage() {
     const { userId, displayName, photoUrl } = useUserId()
     const [entries, setEntries] = useState([])
     const [loading, setLoading] = useState(true)
+    const [myEntry, setMyEntry] = useState(null)
 
     function getAvatarUrl(entry) {
         if (entry.photoUrl) return entry.photoUrl
@@ -84,8 +85,9 @@ function LeaderboardPage() {
                 const data = await resp.json()
                 const lb = data.leaderboard || []
                 setEntries(lb)
-                const found = lb.some(e => String(e.userId) === String(userId))
-                if (!found && userId && userId !== 'dev_user') {
+                const me = lb.find(e => e.isCurrentUser || String(e.userId) === String(userId))
+                setMyEntry(me || null)
+                if (!me && userId && userId !== 'dev_user') {
                     ensureLeaderboardEntry()
                 }
             }
@@ -113,7 +115,7 @@ function LeaderboardPage() {
         <div className="profile-page" style={{
             maxWidth: 400,
             margin: '0 auto',
-            padding: '24px 16px 80px',
+            padding: '24px 16px 150px',
             display: 'flex',
             flexDirection: 'column',
             gap: 12,
@@ -237,6 +239,87 @@ function LeaderboardPage() {
                     })}
                 </div>
             )}
+
+            {myEntry && (() => {
+                const vip = getVIPLevel(myEntry.score || 0)
+                const badges = getBadges(myEntry)
+                const rs = RANK_STYLES[myEntry.rank] || null
+                return (
+                    <div style={{
+                        position: 'fixed',
+                        bottom: 64,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: 'min(calc(100% - 32px), 400px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '10px 12px',
+                        background: 'rgba(20, 117, 229, 0.12)',
+                        borderRadius: 10,
+                        border: '1px solid rgba(20, 117, 229, 0.35)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        zIndex: 100,
+                        boxSizing: 'border-box',
+                    }}>
+                        <div style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: 13,
+                            flexShrink: 0,
+                            background: rs ? rs.bg : 'var(--bg-tertiary)',
+                            color: rs ? rs.color : 'var(--text-secondary)',
+                        }}>
+                            {myEntry.rank}
+                        </div>
+                        <div style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            flexShrink: 0,
+                            background: 'var(--bg-tertiary)',
+                        }}>
+                            <img src={myEntry.photoUrl || `https://api.dicebear.com/7.x/avataaars/png?seed=${encodeURIComponent(myEntry.displayName || 'Player')}&backgroundColor=b6e3f4,c0aede,d1d4f9`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{
+                                    color: 'var(--text-primary)',
+                                    fontWeight: 600,
+                                    fontSize: 14,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}>
+                                    {myEntry.displayName || 'You'}
+                                </span>
+                                {vip && <img src={getVIPImg(vip.name)} alt={vip.name} title={vip.name} style={{ width: 14, height: 14, flexShrink: 0 }} />}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                {badges.map(b => (
+                                    <img key={b} src={`/images/badges/${b}.png`} alt={b} title={b} style={{ width: 16, height: 16, objectFit: 'contain' }} />
+                                ))}
+                            </div>
+                        </div>
+                        <div style={{
+                            fontWeight: 700,
+                            fontSize: 13,
+                            color: 'var(--text-primary)',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
+                        }}>
+                            {activeFiat.symbol}{(myEntry.score || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                )
+            })()}
         </div>
     )
 }
