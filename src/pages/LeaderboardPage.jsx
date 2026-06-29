@@ -56,7 +56,7 @@ const RANK_STYLES = {
 function LeaderboardPage() {
     const navigate = useNavigate()
     const { t, activeFiat } = useWallet()
-    const { userId } = useUserId()
+    const { userId, displayName, photoUrl } = useUserId()
     const [entries, setEntries] = useState([])
     const [loading, setLoading] = useState(true)
 
@@ -66,16 +66,32 @@ function LeaderboardPage() {
         return `https://api.dicebear.com/7.x/avataaars/png?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9`
     }
 
+    const ensureLeaderboardEntry = useCallback(async () => {
+        if (!userId || userId === 'dev_user') return
+        try {
+            await fetch(`${API_BASE}/api/leaderboard/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, displayName, photoUrl }),
+            })
+        } catch { /* ignore */ }
+    }, [userId, displayName, photoUrl])
+
     const fetchLeaderboard = useCallback(async () => {
         try {
             const resp = await fetch(`${API_BASE}/api/leaderboard?userId=${encodeURIComponent(userId || '')}`)
             if (resp.ok) {
                 const data = await resp.json()
-                setEntries(data.leaderboard || [])
+                const lb = data.leaderboard || []
+                setEntries(lb)
+                const found = lb.some(e => String(e.userId) === String(userId))
+                if (!found && userId && userId !== 'dev_user') {
+                    ensureLeaderboardEntry()
+                }
             }
         } catch { /* ignore */ }
         setLoading(false)
-    }, [userId])
+    }, [userId, ensureLeaderboardEntry])
 
     useEffect(() => {
         fetchLeaderboard()
