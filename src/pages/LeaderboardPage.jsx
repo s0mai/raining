@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../context/WalletContext'
 import { useUserId } from '../context/UserContext'
@@ -60,6 +60,21 @@ function LeaderboardPage() {
     const [entries, setEntries] = useState([])
     const [loading, setLoading] = useState(true)
     const [myEntry, setMyEntry] = useState(null)
+    const [barHidden, setBarHidden] = useState(false)
+    const myRowRef = useRef(null)
+    const observerRef = useRef(null)
+
+    useEffect(() => {
+        const el = myRowRef.current
+        if (observerRef.current) observerRef.current.disconnect()
+        if (!el) return
+        const obs = new IntersectionObserver(([entry]) => {
+            setBarHidden(entry.isIntersecting)
+        }, { threshold: 0.8 })
+        obs.observe(el)
+        observerRef.current = obs
+        return () => obs.disconnect()
+    }, [entries, userId])
 
     function getAvatarUrl(entry) {
         if (entry.photoUrl) return entry.photoUrl
@@ -165,7 +180,7 @@ function LeaderboardPage() {
                         const rs = RANK_STYLES[entry.rank] || null
 
                         return (
-                            <div key={entry.userId} style={{
+                            <div key={entry.userId} ref={isMe ? (el) => { myRowRef.current = el } : undefined} style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 10,
@@ -249,7 +264,10 @@ function LeaderboardPage() {
                         position: 'fixed',
                         bottom: 64,
                         left: '50%',
-                        transform: 'translateX(-50%)',
+                        transform: barHidden ? 'translateX(-50%) translateY(40px)' : 'translateX(-50%) translateY(0)',
+                        opacity: barHidden ? 0 : 1,
+                        transition: 'opacity 0.3s, transform 0.3s',
+                        pointerEvents: barHidden ? 'none' : 'auto',
                         width: 'min(calc(100% - 32px), 400px)',
                         display: 'flex',
                         alignItems: 'center',
