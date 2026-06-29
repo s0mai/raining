@@ -27,7 +27,7 @@ const PROMO_CODES = {
     VIPBONUS: { bonus: 50, label: '$50 VIP Bonus' },
     LUCKY7: { bonus: 7, label: '$7 Lucky Bonus' },
     DOUBLE: { bonus: 20, label: '$20 Double Up' },
-    WELCOME: { bonus: 200, label: '$200 Welcome Bonus' },
+    WELCOME: { bonus: 400, label: '$400 Welcome Bonus' },
 }
 
 const LANG_COUNTRY = {
