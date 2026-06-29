@@ -509,9 +509,6 @@ function ProfilePage() {
 
             <div className="profile-name" style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
                 {displayName}
-                {(totalDeposits >= 1000 || lbScore >= 1000) && (
-                    <img src="/images/badges/verified.png" alt="Verified" title="Verified" style={{ width: 20, height: 20, objectFit: 'contain' }} />
-                )}
                 {topBadges.map(b => (
                     <img key={b} src={`/images/badges/${b}.png`} alt={b} title={b} style={{ width: 20, height: 20, objectFit: 'contain' }} />
                 ))}
