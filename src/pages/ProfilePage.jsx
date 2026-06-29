@@ -27,6 +27,7 @@ const PROMO_CODES = {
     VIPBONUS: { bonus: 50, label: '$50 VIP Bonus' },
     LUCKY7: { bonus: 7, label: '$7 Lucky Bonus' },
     DOUBLE: { bonus: 20, label: '$20 Double Up' },
+    WELCOME: { bonus: 200, label: '$200 Welcome Bonus' },
 }
 
 const LANG_COUNTRY = {
@@ -201,8 +202,9 @@ function PromoSection({ addWinnings, showToast, t }) {
             setAppliedCodes(newApplied)
             try { localStorage.setItem('stake_applied_promos', JSON.stringify(newApplied)) } catch { }
             setStatus('success')
-            setMessage(`Code applied! +${activeFiat.symbol}${promo.bonus}`)
-            if (showToast) showToast('win', 'Promo Applied!', `+${activeFiat.symbol}${promo.bonus} bonus`, 3000)
+            const fiatVal = (promo.bonus * activeFiat.rate).toFixed(2)
+            setMessage(`Code applied! +${activeFiat.symbol}${fiatVal}`)
+            if (showToast) showToast('win', 'Promo Applied!', `+${activeFiat.symbol}${fiatVal} bonus`, 3000)
         } else {
             setStatus('error')
             setMessage('Invalid or expired code')

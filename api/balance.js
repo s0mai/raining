@@ -1,4 +1,4 @@
-import { getBalances, initBalances } from '../lib/storage.js'
+import { getBalances, initBalances, getTotalDeposits } from '../lib/storage.js'
 
 export default async function handler(req, res) {
     const { userId } = req.query
@@ -12,7 +12,8 @@ export default async function handler(req, res) {
             balances = await initBalances(userId)
         }
         const total = Object.values(balances).reduce((s, v) => s + v, 0)
-        res.json({ balances, total })
+        const totalDeposits = await getTotalDeposits(userId)
+        res.json({ balances, total, totalDeposits })
     } catch (error) {
         console.error('Balance fetch error:', error)
         res.status(500).json({ error: 'Failed to fetch balance' })

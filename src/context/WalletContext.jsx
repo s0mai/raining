@@ -158,9 +158,13 @@ export function WalletProvider({ children }) {
                 if (data.balances) {
                     setBalances(data.balances)
                 }
+                if (data.totalDeposits != null) {
+                    setTotalDeposits(data.totalDeposits)
+                    try { localStorage.setItem(DEPOSITS_KEY, data.totalDeposits.toString()) } catch (e) { /* ignore */ }
+                }
             }
         } catch (e) { /* silently fail */ }
-    }, [userId, setBalances])
+    }, [userId, setBalances, setTotalDeposits])
 
     // Push balance change to server (fire-and-forget)
     const syncToServer = useCallback(async (action, coin, amount) => {
@@ -218,9 +222,13 @@ export function WalletProvider({ children }) {
                 if (data.balances) {
                     setBalances(data.balances)
                 }
+                if (data.totalDeposits != null) {
+                    setTotalDeposits(data.totalDeposits)
+                    try { localStorage.setItem(DEPOSITS_KEY, data.totalDeposits.toString()) } catch (e) { /* ignore */ }
+                }
             }
         } catch (e) { /* silently fail */ }
-    }, [userId, setBalances])
+    }, [userId, setBalances, setTotalDeposits])
 
     // Update balance and persist to localStorage
     const updateBalance = useCallback((newBalance) => {
