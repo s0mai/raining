@@ -8,7 +8,7 @@ import { cryptos } from '../../data/cryptos'
 import './LimboGame.css'
 
 function LimboGame() {
-    const { balance, placeBet, addWinnings, showToast, activeCurrency, t } = useWallet()
+    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t } = useWallet()
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     const [betAmount, setBetAmount] = useState(1)
     const [target, setTarget] = useState(2)
@@ -65,7 +65,7 @@ function LimboGame() {
                 activeBetRef.current = 0
                 const winAmount = betAmount * target
                 addWinnings(winAmount)
-                showToast('win', t('game.cashed_out'), `+$${(winAmount - betAmount).toFixed(2)} at ${target.toFixed(2)}×`, 3000)
+                showToast('win', t('game.cashed_out'), `+${activeFiat.symbol}${(winAmount - betAmount).toFixed(2)} at ${target.toFixed(2)}×`, 3000)
             }
 
             if (current >= crashPointRef.current) {
@@ -75,7 +75,7 @@ function LimboGame() {
                 setCrashed(true)
                 setPlaying(false)
                 activeBetRef.current = 0
-                showToast('loss', t('game.crashed'), `-$${betAmount.toFixed(2)}`, 3000)
+                showToast('loss', t('game.crashed'), `-${activeFiat.symbol}${betAmount.toFixed(2)}`, 3000)
             }
         }, 30)
     }, [playing, betAmount, balance, target, placeBet, sound, addWinnings, showToast, t])

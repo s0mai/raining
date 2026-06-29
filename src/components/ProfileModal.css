@@ -120,8 +120,62 @@
     height: 8px;
     background: var(--bg-tertiary);
     border-radius: 4px;
-    overflow: hidden;
     position: relative;
+}
+
+.vip-progress-bar .vip-progress-fill-wrap {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: width 0.6s ease;
+}
+
+.vip-progress-markers {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.vip-progress-marker {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+    pointer-events: auto;
+}
+
+.vip-progress-marker.achieved {
+    border-color: var(--color-positive);
+    background: var(--bg-primary);
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.3);
+}
+
+.vip-progress-marker.current {
+    border-color: #1475e1;
+    background: var(--bg-primary);
+    box-shadow: 0 0 8px rgba(20, 117, 225, 0.4);
+    transform: translate(-50%, -50%) scale(1.15);
+    z-index: 3;
+}
+
+.vip-progress-marker img {
+    width: 12px;
+    height: 12px;
+    object-fit: contain;
 }
 
 .vip-progress-fill {

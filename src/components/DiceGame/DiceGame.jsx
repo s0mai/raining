@@ -10,7 +10,7 @@ import '../PlinkoGame/Sidebar.css'
 import './DiceGame.css'
 
 function DiceGame() {
-    const { balance, placeBet, addWinnings, showToast, activeCurrency, t } = useWallet()
+    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t } = useWallet()
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     const [betAmount, setBetAmount] = useState(1)
     const [target, setTarget] = useState(50)
@@ -171,10 +171,10 @@ function DiceGame() {
             const winAmount = betAmount * multiplier
             addWinnings(winAmount)
             sound.play('win')
-            showToast('win', t('game.you_won'), `+$${(winAmount - betAmount).toFixed(2)} at ${multiplier.toFixed(2)}×`, 3000)
+            showToast('win', t('game.you_won'), `+${activeFiat.symbol}${(winAmount - betAmount).toFixed(2)} at ${multiplier.toFixed(2)}×`, 3000)
         } else {
             sound.play('limboLose')
-            showToast('loss', t('game.you_lost'), `-$${betAmount.toFixed(2)}`, 3000)
+            showToast('loss', t('game.you_lost'), `-${activeFiat.symbol}${betAmount.toFixed(2)}`, 3000)
         }
 
         setRolling(false)

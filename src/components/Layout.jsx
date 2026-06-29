@@ -5,6 +5,7 @@ import { useWallet } from '../context/WalletContext'
 function Layout() {
     const { t } = useWallet()
     const bottomNav = [
+        { icon: 'leaderboardicon', label: t('nav.leaderboard'), path: '/leaderboard' },
         { icon: 'games', label: t('nav.games'), path: '/' },
         { icon: 'user', label: t('nav.profile'), path: '/profile' },
     ]

@@ -59,7 +59,7 @@ const PHASE = {
 }
 
 function CrashGame() {
-    const { balance, placeBet, addWinnings, showToast, activeCurrency, t } = useWallet()
+    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t } = useWallet()
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     const [phase, setPhase] = useState(PHASE.WAITING)
     const [multiplier, setMultiplier] = useState(1.00)
@@ -339,7 +339,7 @@ function CrashGame() {
                 // User didn't cash out in time, lost bet
                 profit = -userBetData.amount
                 sound.play('limboLose')
-                showToast('loss', t('game.you_lost'), `-$${userBetData.amount.toFixed(2)} — ${t('crash.crashed_at')}${crashMultiplier.toFixed(2)}×`, 4000)
+                showToast('loss', t('game.you_lost'), `-${activeFiat.symbol}${userBetData.amount.toFixed(2)} — ${t('crash.crashed_at')}${crashMultiplier.toFixed(2)}×`, 4000)
             } else {
                 // User cashed out
                 profit = parseFloat(userBetData.profit) - userBetData.amount
@@ -433,7 +433,7 @@ function CrashGame() {
 
     const handleBet = (amount) => {
         if (amount > balance) {
-            showToast('error', t('game.insufficient_balance'), `You need $${amount.toFixed(2)} but only have $${balance.toFixed(2)}`)
+            showToast('error', t('game.insufficient_balance'), `You need ${activeFiat.symbol}${amount.toFixed(2)} but only have ${activeFiat.symbol}${balance.toFixed(2)}`)
             return
         }
         placeBet(amount)
@@ -449,7 +449,7 @@ function CrashGame() {
             profit: null
         })
         sound.play('bet')
-        showToast('bet', t('game.bet_placed'), `$${amount.toFixed(2)}`, 2500)
+        showToast('bet', t('game.bet_placed'), `${activeFiat.symbol}${amount.toFixed(2)}`, 2500)
     }
 
     // Handle cancel bet
@@ -459,7 +459,7 @@ function CrashGame() {
             addWinnings(betAmount)
             setBetPlaced(false)
             setUserBetData(null)
-            showToast('info', t('game.bet_cancelled'), `$${betAmount.toFixed(2)} refunded`, 2500)
+            showToast('info', t('game.bet_cancelled'), `${activeFiat.symbol}${betAmount.toFixed(2)} refunded`, 2500)
         }
     }
 
@@ -479,7 +479,7 @@ function CrashGame() {
             } : null)
 
             sound.play('win')
-            showToast('win', t('game.you_won'), `+$${profit.toFixed(2)} at ${multiplier.toFixed(2)}×`, 4000)
+            showToast('win', t('game.you_won'), `+${activeFiat.symbol}${profit.toFixed(2)} at ${multiplier.toFixed(2)}×`, 4000)
         }
     }
 
@@ -678,7 +678,7 @@ function CrashGame() {
                             <div className="profit-main">
                                 <p className="label">{t('plinko.profit')}</p>
                                 <p className="value" style={{ color: totalProfit >= 0 ? '#4ade80' : '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                                    <CryptoImg crypto={selectedCrypto} size={14} /> ${totalProfit.toFixed(2)}
+                                    <CryptoImg crypto={selectedCrypto} size={14} /> {activeFiat.symbol}{totalProfit.toFixed(2)}
                                 </p>
                             </div>
                             <div className="profit-divider"></div>
@@ -699,7 +699,7 @@ function CrashGame() {
                             <p className="label">{t('plinko.profit_history')}</p>
                             {hoveredProfitValue !== null && (
                                 <p className="hovered-value" style={{ color: hoveredProfitValue >= 0 ? '#4ade80' : '#f87171', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    {hoveredProfitValue >= 0 ? '' : '-'}<CryptoImg crypto={selectedCrypto} size={14} />${Math.abs(hoveredProfitValue).toFixed(2)}
+                                    {hoveredProfitValue >= 0 ? '' : '-'}<CryptoImg crypto={selectedCrypto} size={14} />{activeFiat.symbol}{Math.abs(hoveredProfitValue).toFixed(2)}
                                 </p>
                             )}
                             <div className="canvas-wrapper">
@@ -780,7 +780,7 @@ function CrashGame() {
                                                 </div>
                                             </div>
                                             <div className={`history-card-profit ${isWin ? 'profit-up' : 'profit-down'}`} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                                {isWin ? '+' : '-'}<CryptoImg crypto={selectedCrypto} size={12} />${Math.abs(r.profit).toFixed(2)}
+                                                {isWin ? '+' : '-'}<CryptoImg crypto={selectedCrypto} size={12} />{activeFiat.symbol}{Math.abs(r.profit).toFixed(2)}
                                             </div>
                                         </div>
                                     );

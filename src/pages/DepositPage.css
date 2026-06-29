@@ -270,6 +270,31 @@
 }
 
 /* === Address Row === */
+.deposit-bonus-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 8px 14px;
+    background: rgba(20, 117, 225, 0.08);
+    border: 1px solid rgba(20, 117, 225, 0.25);
+    border-radius: 8px;
+}
+
+.deposit-bonus-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1475e1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.deposit-bonus-value {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1475e1;
+}
+
 .deposit-address-row {
     display: flex;
     align-items: center;
@@ -652,8 +677,8 @@
     display: inline-block;
     font-size: 11px;
     font-weight: 800;
-    color: #000;
-    background: linear-gradient(90deg, #ffd700, #ffaa00);
+    color: #fff;
+    background: linear-gradient(90deg, #1475e1, #0d5cb8);
     padding: 2px 10px;
     border-radius: 4px;
     letter-spacing: 0.5px;

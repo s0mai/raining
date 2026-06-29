@@ -1,4 +1,4 @@
-import { addCoinBalance } from '../lib/storage.js'
+import { addCoinBalance, incrementTotalDeposits } from '../lib/storage.js'
 
 const COIN_MAP = {
     btc: 'btc', bitcoin: 'btc',
@@ -32,6 +32,7 @@ export default async function handler(req, res) {
         const amount = parseFloat(actually_paid_usd || actually_paid || pay_amount || 0)
         if (amount > 0) {
             await addCoinBalance(userId, coin, amount)
+            await incrementTotalDeposits(userId, amount)
             console.log(`Credited $${amount} to user ${userId} (${coin})`)
         }
     }

@@ -112,7 +112,7 @@ const BALL_TYPES = {
 
 function PlinkoGame() {
     // Shared Wallet
-    const { balance, placeBet, addWinnings, activeCurrency, t } = useWallet()
+    const { balance, placeBet, addWinnings, activeCurrency, activeFiat, t } = useWallet()
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     // State
     const [betAmount, setBetAmount] = useState(1);
@@ -669,7 +669,7 @@ function PlinkoGame() {
                                             title={
                                                 <div>
                                                     <div>{actualBall.name}</div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{t('plinko.payout')}: <CryptoImg crypto={selectedCrypto} size={12} />${record.payout.value.toFixed(2)}</div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{t('plinko.payout')}: <CryptoImg crypto={selectedCrypto} size={12} />{activeFiat.symbol}{record.payout.value.toFixed(2)}</div>
                                                     {isSpecial && <div>{t('plinko.bonus')}: {record.bonusMultiplier.toFixed(2)}×</div>}
                                                 </div>
                                             }
@@ -732,7 +732,7 @@ function PlinkoGame() {
                             <div className="profit-main">
                                 <p className="label">{t('plinko.profit')}</p>
                                 <p className="value" style={{ color: stats.totalProfit >= 0 ? '#4ade80' : '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                                    <CryptoImg crypto={selectedCrypto} size={14} /> ${stats.totalProfit.toFixed(2)}
+                                    <CryptoImg crypto={selectedCrypto} size={14} /> {activeFiat.symbol}{stats.totalProfit.toFixed(2)}
                                 </p>
                             </div>
                             <div className="profit-divider"></div>
@@ -753,7 +753,7 @@ function PlinkoGame() {
                             <p className="label">{t('plinko.profit_history')}</p>
                             {hoveredProfitValue !== null && (
                                 <p className="hovered-value" style={{ color: hoveredProfitValue >= 0 ? '#4ade80' : '#f87171', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    {hoveredProfitValue >= 0 ? '' : '-'}<CryptoImg crypto={selectedCrypto} size={14} />${Math.abs(hoveredProfitValue).toFixed(2)}
+                                    {hoveredProfitValue >= 0 ? '' : '-'}<CryptoImg crypto={selectedCrypto} size={14} />{activeFiat.symbol}{Math.abs(hoveredProfitValue).toFixed(2)}
                                 </p>
                             )}
                             <div className="canvas-wrapper">
@@ -837,7 +837,7 @@ function PlinkoGame() {
                                                 <div className="history-card-multiplier" style={{ color: colors.background[r.binIndex] || '#fff' }}>{r.payout.multiplier.toFixed(2)}×</div>
                                             </div>
                                             <div className={`history-card-profit ${isWin ? 'profit-up' : 'profit-down'}`} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                                {isWin ? '+' : ''}<CryptoImg crypto={selectedCrypto} size={12} />${Math.abs(r.profit).toFixed(2)}
+                                                {isWin ? '+' : ''}<CryptoImg crypto={selectedCrypto} size={12} />{activeFiat.symbol}{Math.abs(r.profit).toFixed(2)}
                                             </div>
                                         </div>
                                     );

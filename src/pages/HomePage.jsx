@@ -28,7 +28,7 @@ function AnimatedCount({ value }) {
 const games = [
     {
         id: 'dice',
-        name: 'Dice',
+        nameKey: 'game.Dice',
         image: '/images/dice.png',
         icon: (
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -41,7 +41,7 @@ const games = [
     },
     {
         id: 'mines',
-        name: 'Mines',
+        nameKey: 'game.Mines',
         image: '/images/mines.png',
         icon: (
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -54,7 +54,7 @@ const games = [
     },
     {
         id: 'limbo',
-        name: 'Limbo',
+        nameKey: 'game.Limbo',
         image: '/images/limbo.png',
         icon: (
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -67,7 +67,7 @@ const games = [
     },
     {
         id: 'plinko',
-        name: 'Plinko',
+        nameKey: 'game.Plinko',
         image: '/images/plinko.png',
         icon: (
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -80,7 +80,7 @@ const games = [
     },
     {
         id: 'crash',
-        name: 'Crash',
+        nameKey: 'game.Crash',
         image: '/images/crash.png',
         icon: (
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -146,7 +146,7 @@ function HomePage() {
                         >
                             <div className="stake-card-image">
                                 {game.image ? (
-                                    <img src={game.image} alt={game.name} className="game-art-image" />
+                                    <img src={game.image} alt={t(game.nameKey)} className="game-art-image" />
                                 ) : (
                                     <div className="game-art-placeholder">
                                         {game.icon}

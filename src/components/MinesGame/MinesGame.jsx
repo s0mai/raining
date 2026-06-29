@@ -27,7 +27,7 @@ const calculateMultiplier = (mines, hits) => {
 };
 
 function MinesGame() {
-    const { balance, placeBet, addWinnings, showToast, activeCurrency, t } = useWallet();
+    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t } = useWallet();
     const [isPlaying, setIsPlaying] = useState(false);
     const [betAmount, setBetAmount] = useState(1);
     const [minesCount, setMinesCount] = useState(3);
@@ -167,7 +167,7 @@ function MinesGame() {
     const startGame = async () => {
         if (betAmount <= 0) return;
         if (balance < betAmount) {
-            showToast('error', t('game.insufficient_balance'), `You need $${betAmount.toFixed(2)}`);
+            showToast('error', t('game.insufficient_balance'), `You need ${activeFiat.symbol}${betAmount.toFixed(2)}`);
             return;
         }
 
@@ -184,7 +184,7 @@ function MinesGame() {
         setRevealedTiles([]);
         setGameOverState(null);
         setIsPlaying(true);
-        showToast('bet', t('game.game_started'), `$${betAmount.toFixed(2)} bet placed`);
+        showToast('bet', t('game.game_started'), `${activeFiat.symbol}${betAmount.toFixed(2)} bet placed`);
         sound.play('bet')
     };
 
@@ -196,10 +196,10 @@ function MinesGame() {
             const profit = potentialWin - betAmount;
             addWinnings(potentialWin);
             playWinWithReverb();
-            showToast('win', t('game.cashed_out'), `+$${profit.toFixed(2)} at ${currentMultiplier.toFixed(2)}×`, 4000);
+            showToast('win', t('game.cashed_out'), `+${activeFiat.symbol}${profit.toFixed(2)} at ${currentMultiplier.toFixed(2)}×`, 4000);
         } else if (reason === 'loss') {
             sound.play('limboLose');
-            showToast('loss', t('mines.boom'), `-$${betAmount.toFixed(2)}`, 3000);
+            showToast('loss', t('mines.boom'), `-${activeFiat.symbol}${betAmount.toFixed(2)}`, 3000);
         }
     };
 
@@ -246,7 +246,7 @@ function MinesGame() {
                 const profit = finalWin - betAmount;
                 addWinnings(finalWin);
 
-                showToast('win', t('mines.all_gems'), `+$${profit.toFixed(2)} at ${finalMult.toFixed(2)}×`, 4000);
+                showToast('win', t('mines.all_gems'), `+${activeFiat.symbol}${profit.toFixed(2)} at ${finalMult.toFixed(2)}×`, 4000);
             }
         }
     };
@@ -312,7 +312,7 @@ function MinesGame() {
                                 <div className="form-header">
                                     <label className="form-label" style={{ margin: 0 }}>{t('game.bet_amount')}</label>
                                     <Text type="secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        <CryptoImg crypto={selectedCrypto} size={14} /> ${(betAmount ?? 0).toFixed(2)}
+                                        <CryptoImg crypto={selectedCrypto} size={14} /> {activeFiat.symbol}{(betAmount ?? 0).toFixed(2)}
                                     </Text>
                                 </div>
                                 <div className="input-row">

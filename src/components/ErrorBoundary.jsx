@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { t } from '../i18n/translations'
 
 export default class ErrorBoundary extends Component {
     constructor(props) {
@@ -15,6 +16,7 @@ export default class ErrorBoundary extends Component {
     }
 
     render() {
+        const lang = this.props.lang || 'en'
         if (this.state.error) {
             return (
                 <div style={{
@@ -30,7 +32,7 @@ export default class ErrorBoundary extends Component {
                     textAlign: 'center',
                 }}>
                     <div style={{ fontSize: 48, marginBottom: 16 }}>⚠</div>
-                    <h2 style={{ color: '#fff', margin: '0 0 8px' }}>Something went wrong</h2>
+                    <h2 style={{ color: '#fff', margin: '0 0 8px' }}>{t('error.something_wrong', lang)}</h2>
                     <p style={{ margin: '0 0 24px', fontSize: 14, maxWidth: 400, lineHeight: 1.5 }}>
                         {this.state.error.message}
                     </p>
@@ -47,7 +49,7 @@ export default class ErrorBoundary extends Component {
                             cursor: 'pointer',
                         }}
                     >
-                        Reload
+                        {t('error.reload', lang)}
                     </button>
                     {this.state.error.message && (
                         <pre style={{

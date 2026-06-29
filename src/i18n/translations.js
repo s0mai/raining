@@ -3,6 +3,7 @@ const translations = {
     // Nav
     'nav.games': 'Games',
     'nav.profile': 'Profile',
+    'nav.leaderboard': 'Leaderboard',
     'nav.wallet': 'Wallet',
     'nav.select_currency': 'Select Currency',
     'nav.deposit': 'Deposit',
@@ -83,6 +84,25 @@ const translations = {
     'deposit.address_empty': 'Address cannot be empty',
     'deposit.invalid_amount': 'Enter a valid amount',
     'deposit.exceeds_balance': 'Amount exceeds available balance',
+    'deposit.bonus_badge': '100% BONUS',
+    'deposit.bonus_banner': 'First deposit doubled!',
+    'deposit.bonus_row': '100% Bonus',
+    'deposit.bonus_popup_title': '100% Deposit Bonus!',
+    'deposit.bonus_popup_msg': 'Your deposit of ${amount} has been matched!',
+    'deposit.bonus_popup_sub': '+${amount} bonus credited',
+    'deposit.bonus_lets_play': "Let's Play!",
+    'deposit.send_exact': 'Send only ${currency} to this address.',
+    'deposit.open_payment': 'Open the payment page above to complete your deposit.',
+    'deposit.waiting': 'Transaction sent. Waiting for confirmation...',
+    'deposit.balance_auto': 'Balance will update automatically once confirmed.',
+    // Bonus Welcome Popup
+    'bonus.title': '100% BONUS',
+    'bonus.subtitle': 'First deposit doubled!',
+    'bonus.description': 'Get a 100% match bonus up to $1,000 on your first deposit',
+    'bonus.claim': 'Claim Now',
+    // Error
+    'error.something_wrong': 'Something went wrong',
+    'error.reload': 'Reload',
     // Games - Common
     'game.bet_amount': 'Bet Amount',
     'game.half': '½',

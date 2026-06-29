@@ -4,8 +4,8 @@ import { useUser } from '../hooks/useUser'
 const UserContext = createContext(null)
 
 export function UserProvider({ children }) {
-    const { userId, initData } = useUser()
-    return <UserContext.Provider value={{ userId, initData }}>{children}</UserContext.Provider>
+    const user = useUser()
+    return <UserContext.Provider value={{ userId: user.userId, initData: user.initData, displayName: user.displayName, photoUrl: user.photoUrl }}>{children}</UserContext.Provider>
 }
 
 export function useUserId() {

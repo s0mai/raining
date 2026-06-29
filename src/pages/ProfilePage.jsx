@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../context/WalletContext'
 import { useUser } from '../hooks/useUser'
@@ -114,6 +114,7 @@ function getVIPImg(levelName, size = 24) {
 }
 
 function ReferralSection({ userId, t }) {
+    const { activeFiat } = useWallet()
     const referralLink = userId
         ? `t.me/rainbetoriginalbot?start=REF${userId}`
         : 't.me/rainbetoriginalbot?start=PLAYER'
@@ -166,7 +167,7 @@ function ReferralSection({ userId, t }) {
                     </span>
                     <span className="referral-stat-divider">•</span>
                     <span className="referral-stat">
-                        <span className="referral-stat-num">${bonus.toFixed(2)}</span> bonus earned
+                        <span className="referral-stat-num">{activeFiat.symbol}{bonus.toFixed(2)}</span> bonus earned
                     </span>
                 </div>
             </div>
@@ -175,6 +176,7 @@ function ReferralSection({ userId, t }) {
 }
 
 function PromoSection({ addWinnings, showToast, t }) {
+    const { activeFiat } = useWallet()
     const [code, setCode] = useState('')
     const [status, setStatus] = useState(null)
     const [message, setMessage] = useState('')
@@ -199,8 +201,8 @@ function PromoSection({ addWinnings, showToast, t }) {
             setAppliedCodes(newApplied)
             try { localStorage.setItem('stake_applied_promos', JSON.stringify(newApplied)) } catch { }
             setStatus('success')
-            setMessage(`Code applied! +$${promo.bonus}`)
-            if (showToast) showToast('win', 'Promo Applied!', `+$${promo.bonus} bonus`, 3000)
+            setMessage(`Code applied! +${activeFiat.symbol}${promo.bonus}`)
+            if (showToast) showToast('win', 'Promo Applied!', `+${activeFiat.symbol}${promo.bonus} bonus`, 3000)
         } else {
             setStatus('error')
             setMessage('Invalid or expired code')
@@ -480,7 +482,12 @@ function ProfilePage() {
                 </div>
             )}
 
-            <div className="profile-name">{displayName}</div>
+            <div className="profile-name" style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                {displayName}
+                {totalDeposits >= 1000 && (
+                    <img src="/images/badges/verified.png" alt="Verified" title="Verified" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                )}
+            </div>
 
             {level ? (
                 <div className="vip-badge" style={{ background: level.name === 'Obsidian' ? 'linear-gradient(135deg, #2d1b4e, #4a2a7a)' : level.gradient }}>
@@ -499,16 +506,41 @@ function ProfilePage() {
             <div className="vip-progress-section">
                 <div className="vip-progress-label">
                     <span>{level ? level.name : t('profile.unranked')}</span>
-                    <span>{nextLevel ? nextLevel.name : 'Bronze'}</span>
+                    <span>{nextLevel ? nextLevel.name : t('profile.max_level')}</span>
                 </div>
                 <div className="vip-progress-bar">
-                    <div
-                        className={`vip-progress-fill${isObsidian ? ' obsidian' : ''}`}
-                        style={{
-                            width: `${Math.min(100, Math.max(0, progressPercent))}%`,
-                            background: isObsidian ? undefined : progressColor,
-                        }}
-                    />
+                    <div className="vip-progress-fill-wrap" style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}>
+                        <div
+                            className={`vip-progress-fill${isObsidian ? ' obsidian' : ''}`}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                background: isObsidian ? undefined : progressColor,
+                            }}
+                        />
+                    </div>
+                    <div className="vip-progress-markers">
+                        {[
+                            { name: 'Bronze', pct: 5 },
+                            { name: 'Silver', pct: 20 },
+                            { name: 'Gold', pct: 40 },
+                            { name: 'Platinum I', pct: 60 },
+                            { name: 'Diamond I', pct: 80 },
+                            { name: 'Obsidian', pct: 95 },
+                        ].map(l => {
+                            const achieved = totalDeposits >= VIP_LEVELS.find(v => v.name === l.name).minDeposit
+                            return (
+                                <div
+                                    key={l.name}
+                                    className={`vip-progress-marker${achieved ? ' achieved' : ''}`}
+                                    style={{ left: `${l.pct}%` }}
+                                    title={l.name}
+                                >
+                                    {getVIPImg(l.name, 12)}
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
                 <div className="vip-next-info">
                     {nextLevel

@@ -31,6 +31,9 @@
         requestAnimationFrame(() => requestAnimationFrame(() => {
             document.getElementById('loadingScreen')?.classList.add('visible')
         }))
+        setTimeout(() => {
+            document.getElementById('loadingScreen')?.classList.add('hidden')
+        }, 4000)
     </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>

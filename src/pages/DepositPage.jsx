@@ -14,7 +14,7 @@ const IS_DEV = import.meta.env.DEV
 const PLATFORM_TON_WALLET = 'UQBbY_WYNPKoxPEplMIc6i_q_iJXzs4hpYU8G2WqYvZCr93W'
 
 function DepositPage() {
-    const { balance, balances, totalBalance, activeCurrency, updateBalance, syncBalance, showToast, addTransaction, deposit, setBalances, t } = useWallet()
+    const { balance, balances, totalBalance, activeCurrency, updateBalance, syncBalance, showToast, addTransaction, deposit, setBalances, t, activeFiat } = useWallet()
     const { userId } = useUserId()
     const [tonConnectUI] = useTonConnectUI()
     const [selectedCrypto, setSelectedCrypto] = useState(null)
@@ -95,9 +95,22 @@ function DepositPage() {
                         if (newCoinBal > prevCoinBal && !bonusClaimedRef.current) {
                             const diff = newCoinBal - prevCoinBal
                             bonusClaimedRef.current = true
+                            try {
+                                const check = await fetch(`${API_BASE}/api/bonus/first-deposit?userId=${userId}`)
+                                const checkData = await check.json()
+                                if (checkData.claimed) return
+                            } catch { /* fall through, apply bonus anyway */ }
                             setBonusPopup({ amount: diff, coin })
-                            deposit(diff, coin)
-                            showToast('win', '100% Deposit Bonus!', `+${diff.toFixed(2)} bonus credited`, 6000)
+                            deposit(diff, coin, true)
+                            try { localStorage.setItem('stake_has_visited', '1') } catch {}
+                            showToast('win', t('deposit.bonus_popup_title'), t('deposit.bonus_popup_sub').replace('${amount}', diff.toFixed(2)), 6000)
+                            try {
+                                await fetch(`${API_BASE}/api/bonus/first-deposit`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ userId }),
+                                })
+                            } catch { /* ignore */ }
                         }
                         prevBalRef.current = newCoinBal
                         setBalances(data.balances)
@@ -261,7 +274,7 @@ function DepositPage() {
         setWithdrawAddress('')
         setWithdrawAmount('')
         setWithdrawError({})
-        showToast('win', 'Withdrawal Submitted', `-$${amount.toFixed(2)} ${selectedCrypto.symbol}`, 3000)
+        showToast('win', 'Withdrawal Submitted', `-${activeFiat.symbol}${amount.toFixed(2)} ${selectedCrypto.symbol}`, 3000)
     }
 
     return (
@@ -276,17 +289,16 @@ function DepositPage() {
             </div>
             <div className="deposit-balance">
                 <span className="deposit-balance-label">{selectedCrypto ? `${selectedCrypto.name} ${t('deposit.balance')}` : t('deposit.total_balance')}</span>
-                <span className="deposit-balance-amount">${selectedCrypto ? (balances[selectedCrypto.id] || 0).toFixed(2) : totalBalance.toFixed(2)}</span>
+                <span className="deposit-balance-amount">{activeFiat.symbol}{selectedCrypto ? ((balances[selectedCrypto.id] || 0) * activeFiat.rate).toFixed(2) : (totalBalance * activeFiat.rate).toFixed(2)}</span>
             </div>
             {!selectedCrypto && (
                 <div className="deposit-bonus-banner">
                     <div className="deposit-bonus-banner-glow" />
                     <div className="deposit-bonus-banner-content">
                         <div className="deposit-bonus-banner-left">
-                            <span className="deposit-bonus-banner-badge">100% BONUS</span>
-                            <span className="deposit-bonus-banner-text">First deposit doubled!</span>
+                            <span className="deposit-bonus-banner-badge">{t('deposit.bonus_badge')}</span>
+                            <span className="deposit-bonus-banner-text">{t('deposit.bonus_banner')}</span>
                         </div>
-                        <span className="deposit-bonus-banner-arrow">→</span>
                     </div>
                 </div>
             )}
@@ -298,7 +310,7 @@ function DepositPage() {
                             <span className="deposit-crypto-name">{crypto.name}</span>
                             <span className="deposit-crypto-symbol">{crypto.symbol}</span>
                         </div>
-                        <span className="deposit-crypto-balance">${(balances[crypto.id] || 0).toFixed(2)}</span>
+                        <span className="deposit-crypto-balance">{activeFiat.symbol}{((balances[crypto.id] || 0) * activeFiat.rate).toFixed(2)}</span>
                     </div>
                 ))}
             </div>
@@ -374,6 +386,10 @@ function DepositPage() {
                                                 </div>
                                             )}
                                         </div>
+                                        <div className="deposit-bonus-row">
+                                            <span className="deposit-bonus-label">{t('deposit.bonus_row')}</span>
+                                            <span className="deposit-bonus-value">{depositUsd > 0 ? `${activeFiat.symbol}${(parseFloat(depositUsd) * 2).toFixed(2)}` : `${activeFiat.symbol}0.00 ×2`}</span>
+                                        </div>
                                         <button
                                             className="deposit-action-btn"
                                             onClick={handleInitiateDeposit}
@@ -442,12 +458,12 @@ function DepositPage() {
                                                     </button>
                                                 </div>
                                                 <p className="deposit-address-hint">
-                                                    Send only <strong>{depositInfo.pay_currency}</strong> to this address.
+                                                    {t('deposit.send_exact').replace('${currency}', depositInfo.pay_currency)}
                                                 </p>
                                             </>
                                         ) : (
                                             <p className="deposit-address-hint" style={{ textAlign: 'center', marginTop: 8 }}>
-                                                Open the payment page above to complete your deposit.
+                                                {t('deposit.open_payment')}
                                             </p>
                                         )}
                                     </>
@@ -456,8 +472,8 @@ function DepositPage() {
                                 {tonConfirming && (
                                     <div className="deposit-confirming">
                                         <div className="deposit-spinner" />
-                                        <p>Transaction sent. Waiting for confirmation...</p>
-                                        <p className="deposit-address-hint">Balance will update automatically once confirmed.</p>
+                                        <p>{t('deposit.waiting')}</p>
+                                        <p className="deposit-address-hint">{t('deposit.balance_auto')}</p>
                                     </div>
                                 )}
                             </div>
@@ -468,7 +484,7 @@ function DepositPage() {
                                 <div className="deposit-box">
                                     <div className="withdraw-balance-ref">
                                         <span>{t('deposit.available_balance').replace('${symbol}', selectedCrypto.symbol)}</span>
-                                        <span className="withdraw-balance-amount">${(balances[selectedCrypto.id] || 0).toFixed(2)}</span>
+                                        <span className="withdraw-balance-amount">{activeFiat.symbol}{(balances[selectedCrypto.id] || 0).toFixed(2)}</span>
                                     </div>
                                     <div className="withdraw-field">
                                         <label className="withdraw-label">{t('deposit.dest_address')}</label>
@@ -515,13 +531,13 @@ function DepositPage() {
                                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                             </svg>
                         </div>
-                        <h2 className="deposit-bonus-popup-title">100% Deposit Bonus!</h2>
-                        <p className="deposit-bonus-popup-msg">
-                            Your deposit of <strong>${bonusPopup.amount.toFixed(2)}</strong> has been matched!
-                        </p>
-                        <p className="deposit-bonus-popup-sub">+${bonusPopup.amount.toFixed(2)} bonus credited</p>
+                        <h2 className="deposit-bonus-popup-title">{t('deposit.bonus_popup_title')}</h2>
+                        <p className="deposit-bonus-popup-msg" dangerouslySetInnerHTML={{
+                            __html: t('deposit.bonus_popup_msg').replace('${amount}', `<strong>${activeFiat.symbol}${bonusPopup.amount.toFixed(2)}</strong>`),
+                        }} />
+                        <p className="deposit-bonus-popup-sub">{t('deposit.bonus_popup_sub').replace('${amount}', bonusPopup.amount.toFixed(2))}</p>
                         <button className="deposit-bonus-popup-btn" onClick={() => setBonusPopup(null)}>
-                            Let's Play!
+                            {t('deposit.bonus_lets_play')}
                         </button>
                     </div>
                 </div>

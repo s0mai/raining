@@ -1,4 +1,4 @@
-import { getBalance, setBalance } from '../lib/storage.js'
+import { getBalances, setBalances, incrementTotalDeposits } from '../lib/storage.js'
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -38,9 +38,11 @@ export default async function handler(req, res) {
                     if (tx.in_msg && tx.in_msg.source && tx.in_msg.value) {
                         const value = parseFloat(tx.in_msg.value) / 1e9
                         if (Math.abs(value - parseFloat(expectedAmount)) < 0.001) {
-                            const currentBalance = await getBalance(userId)
+                            const currentBalance = await getBalances(userId)
                             const usdValue = value * tonPrice
-                            await setBalance(userId, currentBalance + usdValue)
+                            const newBalances = { ...(currentBalance || {}), ton: (currentBalance?.ton || 0) + usdValue }
+                            await setBalances(userId, newBalances)
+                            await incrementTotalDeposits(userId, usdValue)
                             return res.json({
                                 confirmed: true,
                                 amount: value,
