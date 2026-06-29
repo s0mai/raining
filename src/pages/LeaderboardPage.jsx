@@ -55,7 +55,7 @@ const RANK_STYLES = {
 
 function LeaderboardPage() {
     const navigate = useNavigate()
-    const { t, activeFiat } = useWallet()
+    const { t, activeFiat, totalBalance } = useWallet()
     const { userId, displayName, photoUrl } = useUserId()
     const [entries, setEntries] = useState([])
     const [loading, setLoading] = useState(true)
@@ -72,10 +72,10 @@ function LeaderboardPage() {
             await fetch(`${API_BASE}/api/leaderboard/sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, displayName, photoUrl }),
+                body: JSON.stringify({ userId, displayName, photoUrl, depositAmount: totalBalance }),
             })
         } catch { /* ignore */ }
-    }, [userId, displayName, photoUrl])
+    }, [userId, displayName, photoUrl, totalBalance])
 
     const fetchLeaderboard = useCallback(async () => {
         try {
