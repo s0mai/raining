@@ -2,9 +2,8 @@
 // Uses pre-calculated X positions for natural ball trajectories.
 // Ball drops at a precise X → physics naturally guides it to the correct bin.
 
-import { Ball, pad, unpad } from './Ball';
+import { Ball, pad } from './Ball';
 import { BIN_PAYOUTS } from './constants';
-import { OUTCOMES } from './plinkoOutcomes';
 
 const WIDTH = 760;
 const HEIGHT = 570;
@@ -37,6 +36,7 @@ class PlinkoEngine {
         this.riskLevel = options.riskLevel || 'medium';
         this.onBallEnterBin = options.onBallEnterBin || (() => { });
         this.onBalanceChange = options.onBalanceChange || (() => { });
+        this.outcomes = options.outcomes || {};
 
         this.balls = [];
         this.pins = [];           // { id, x, y, radius } — x,y in UNPADDED screen coords
@@ -94,7 +94,7 @@ class PlinkoEngine {
      * Data loaded from plinkoOutcomes.js (generated offline by scripts/generatePlinkoOutcomes.cjs)
      */
     _getDropXForBin(binIndex) {
-        const rowOutcomes = OUTCOMES[this.rowCount];
+        const rowOutcomes = this.outcomes[this.rowCount];
         if (!rowOutcomes) return pad(WIDTH / 2);
 
         const positions = rowOutcomes[binIndex];
@@ -146,7 +146,7 @@ class PlinkoEngine {
 
                 this.ctx.beginPath();
                 this.ctx.arc(pin.x, pin.y, pin.radius, 0, Math.PI * 2);
-                this.ctx.fillStyle = '#1475e1'; // Stake signature green when hit
+                this.ctx.fillStyle = '#1475e1';
                 this.ctx.fill();
 
                 // Bright glow effect

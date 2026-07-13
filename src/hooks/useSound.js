@@ -11,30 +11,45 @@ const SOUND_MAP = {
   win: '/sounds/Win.mp3',
 }
 
-export default function useSound(enabled) {
-  const cache = useRef({})
+let globalCache = null
+let globalReady = {}
+let loadAttempted = false
 
-  useEffect(() => {
-    if (!enabled) return
+function loadAllSounds() {
+    if (loadAttempted) return
+    loadAttempted = true
+    globalCache = {}
     Object.entries(SOUND_MAP).forEach(([name, url]) => {
-      const audio = new Audio(url)
-      audio.preload = 'auto'
-      audio.load()
-      cache.current[name] = audio
+        const audio = new Audio(url)
+        audio.preload = 'auto'
+        audio.addEventListener('canplaythrough', () => { globalReady[name] = true }, { once: true })
+        audio.addEventListener('error', () => { globalReady[name] = true }, { once: true })
+        audio.load()
+        globalCache[name] = audio
+        if (audio.readyState >= 2) globalReady[name] = true
     })
-    return () => {
-      Object.keys(cache.current).forEach(name => {
-        const audio = cache.current[name]
-        audio.pause()
-        audio.src = ''
-      })
-      cache.current = {}
-    }
+}
+
+export default function useSound(enabled) {
+  useEffect(() => {
+    if (enabled && !loadAttempted) loadAllSounds()
   }, [enabled])
 
-  const play = useCallback((name, { loop = false } = {}) => {
+  const play = useCallback((name, { loop = false, overlap = false } = {}) => {
     if (!enabled) return
-    const audio = cache.current[name]
+    let audio
+    if (overlap) {
+      audio = new Audio(SOUND_MAP[name])
+      const promise = audio.play()
+      if (promise) promise.then(() => {
+        audio.addEventListener('ended', () => audio.remove(), { once: true })
+      }).catch(() => {})
+      return
+    }
+    audio = globalCache?.[name]
+    if (!audio) {
+      audio = new Audio(SOUND_MAP[name])
+    }
     if (!audio) return
     audio.loop = loop
     audio.currentTime = 0
@@ -43,7 +58,7 @@ export default function useSound(enabled) {
   }, [enabled])
 
   const stop = useCallback((name) => {
-    const audio = cache.current[name]
+    const audio = globalCache?.[name]
     if (audio) {
       audio.pause()
       audio.currentTime = 0

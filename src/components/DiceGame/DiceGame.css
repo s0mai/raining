@@ -5,6 +5,7 @@
     width: 100%;
     background: var(--bg-primary);
     overflow: hidden;
+    font-family: 'ProximaNovaRegular', var(--font-family);
 }
 
 .dice-main {

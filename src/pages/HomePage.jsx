@@ -154,7 +154,7 @@ function HomePage() {
                                 )}
                                 <div className="card-overlay">
                                     <div className="play-btn">
-                                        <svg viewBox="0 0 24 24" width="24" height="24" fill="black"><path d="M8 5v14l11-7z" /></svg>
+                                        <svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M8 5v14l11-7z" /></svg>
                                     </div>
                                 </div>
                             </div>

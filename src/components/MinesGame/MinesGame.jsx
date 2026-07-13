@@ -1,8 +1,4 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import {
-    CloseOutlined,
-    BugOutlined
-} from '@ant-design/icons'
 import { Button, Typography } from 'antd'
 import BetInput from '../BetInput'
 const { Text } = Typography
@@ -27,7 +23,7 @@ const calculateMultiplier = (mines, hits) => {
 };
 
 function MinesGame() {
-    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t } = useWallet();
+    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t, isLuckBoosted, incrementWinstreak, resetWinstreak, isForceLoss } = useWallet();
     const [isPlaying, setIsPlaying] = useState(false);
     const [betAmount, setBetAmount] = useState(1);
     const [minesCount, setMinesCount] = useState(3);
@@ -38,14 +34,10 @@ function MinesGame() {
 
     const [soundEnabled, setSoundEnabled] = useState(true);
     const sound = useSound(soundEnabled)
-
-    const [isDebugMode, setIsDebugMode] = useState(false);
-    const [debugData, setDebugData] = useState(null);
+    const rollingRef = useRef(false)
 
     const fairnessRef = useRef(null);
     const activeBetRef = useRef(0);
-    const debugWidgetRef = useRef(null);
-    const dragHandlersRef = useRef({ move: null, up: null });
     const audioCtxRef = useRef(null);
 
     useEffect(() => {
@@ -54,51 +46,18 @@ function MinesGame() {
     }, []);
 
     useEffect(() => {
-        const pf = fairnessRef.current;
-        if (isDebugMode && pf && pf._hashReady && !isPlaying) {
-            pf.peekMinesPositions(minesCount).then(data => {
-                setDebugData(data);
-            }).catch(err => console.error('Peek info error:', err));
-        }
-    }, [isDebugMode, minesCount, isPlaying]);
-
-    const handleDebugDragStart = useCallback((e) => {
-        if (!debugWidgetRef.current) return;
-        const rect = debugWidgetRef.current.getBoundingClientRect();
-        const offset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-        let isDragging = true;
-
-        const onMove = (evt) => {
-            if (!isDragging || !debugWidgetRef.current) return;
-            const maxX = window.innerWidth - debugWidgetRef.current.offsetWidth;
-            const maxY = window.innerHeight - debugWidgetRef.current.offsetHeight;
-            debugWidgetRef.current.style.left = `${Math.max(0, Math.min(evt.clientX - offset.x, maxX))}px`;
-            debugWidgetRef.current.style.top = `${Math.max(0, Math.min(evt.clientY - offset.y, maxY))}px`;
-            debugWidgetRef.current.style.right = 'auto';
-            debugWidgetRef.current.style.bottom = 'auto';
-            debugWidgetRef.current.style.transform = 'none';
-        };
-        const onUp = () => { isDragging = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); dragHandlersRef.current = { move: null, up: null }; };
-        dragHandlersRef.current = { move: onMove, up: onUp };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-    }, []);
-
-    useEffect(() => {
         return () => {
             if (activeBetRef.current > 0) {
                 addWinnings(activeBetRef.current);
                 activeBetRef.current = 0;
             }
-            if (dragHandlersRef.current.move) document.removeEventListener('mousemove', dragHandlersRef.current.move);
-            if (dragHandlersRef.current.up) document.removeEventListener('mouseup', dragHandlersRef.current.up);
         };
     }, [addWinnings]);
 
     // Audio setup
     const playSound = (type) => {
-        if (type === 'gem') sound.play('minesGem')
-        else if (type === 'bomb') sound.play('minesBomb')
+        if (type === 'gem') sound.play('minesGem', { overlap: true })
+        else if (type === 'bomb') sound.play('minesBomb', { overlap: true })
     }
 
     const playWinWithReverb = useCallback(() => {
@@ -165,14 +124,16 @@ function MinesGame() {
     };
 
     const startGame = async () => {
-        if (betAmount <= 0) return;
-        if (balance < betAmount) {
-            showToast('error', t('game.insufficient_balance'), `You need ${activeFiat.symbol}${betAmount.toFixed(2)}`);
+        if (rollingRef.current || betAmount <= 0) return;
+        rollingRef.current = true;
+        const cryptoBet = betAmount / activeFiat.rate;
+        if (balance < cryptoBet) {
+            showToast('error', t('game.insufficient_balance'), t('game.need_balance').replace('${amount}', () => `${activeFiat.symbol}${betAmount.toFixed(2)}`));
             return;
         }
 
-        placeBet(betAmount);
-        activeBetRef.current = betAmount;
+        placeBet(cryptoBet);
+        activeBetRef.current = cryptoBet;
 
         // Generate mines using provably fair system
         const pf = fairnessRef.current;
@@ -184,27 +145,50 @@ function MinesGame() {
         setRevealedTiles([]);
         setGameOverState(null);
         setIsPlaying(true);
-        showToast('bet', t('game.game_started'), `${activeFiat.symbol}${betAmount.toFixed(2)} bet placed`);
+        showToast('bet', t('game.game_started'), t('game.bet_placed_desc').replace('${amount}', () => `${activeFiat.symbol}${betAmount.toFixed(2)}`));
         sound.play('bet')
     };
 
     const endGame = (reason) => {
-        activeBetRef.current = 0;
+        rollingRef.current = false;
         setIsPlaying(false);
         setGameOverState(reason);
         if (reason === 'win') {
+            const cryptoWin = potentialWin / activeFiat.rate;
             const profit = potentialWin - betAmount;
-            addWinnings(potentialWin);
+            addWinnings(cryptoWin);
+            activeBetRef.current = 0;
             playWinWithReverb();
-            showToast('win', t('game.cashed_out'), `+${activeFiat.symbol}${profit.toFixed(2)} at ${currentMultiplier.toFixed(2)}×`, 4000);
+            showToast('win', t('game.cashed_out'), t('crash.win_desc').replace('{amount}', () => `${activeFiat.symbol}${profit.toFixed(2)}`).replace('{multiplier}', currentMultiplier.toFixed(2)), 4000);
+            incrementWinstreak();
         } else if (reason === 'loss') {
-            sound.play('limboLose');
-            showToast('loss', t('mines.boom'), `-${activeFiat.symbol}${betAmount.toFixed(2)}`, 3000);
+            sound.play('limboLose', { overlap: true });
+            showToast('loss', t('mines.boom'), t('game.loss_desc').replace('{amount}', () => `${activeFiat.symbol}${betAmount.toFixed(2)}`), 3000);
+            resetWinstreak();
+            activeBetRef.current = 0;
         }
     };
 
     const cashout = () => {
         if (!isPlaying || revealedTiles.length === 0) return;
+        if (isForceLoss()) {
+            const unrevealedSafe = [];
+            for (let i = 0; i < 25; i++) {
+                if (!revealedTiles.includes(i) && !mineLocations.includes(i)) {
+                    unrevealedSafe.push(i);
+                }
+            }
+            if (unrevealedSafe.length > 0) {
+                const forceMine = unrevealedSafe[Math.floor(Math.random() * unrevealedSafe.length)];
+                const newMines = new Set(mineLocations);
+                newMines.add(forceMine);
+                setMineLocations(Array.from(newMines));
+                setRevealedTiles(prev => [...prev, forceMine]);
+                playSound('bomb');
+                endGame('loss');
+                return;
+            }
+        }
         endGame('win');
     };
 
@@ -226,12 +210,36 @@ function MinesGame() {
         if (!isPlaying || revealedTiles.includes(index) || gameOverState) return;
 
         if (mineLocations.includes(index)) {
+            if (isLuckBoosted && Math.random() < 0.7) {
+                // Survive — move the mine to another unrevealed tile
+                const newMines = new Set(mineLocations);
+                newMines.delete(index);
+                const safeUnrevealed = Array.from({ length: 25 }, (_, i) => i).filter(i => !newMines.has(i) && !revealedTiles.includes(i));
+                if (safeUnrevealed.length > 0) {
+                    newMines.add(safeUnrevealed[Math.floor(Math.random() * safeUnrevealed.length)]);
+                }
+                setMineLocations(Array.from(newMines));
+                // Treat as gem
+                const newRevealed = [...revealedTiles, index];
+                setRevealedTiles(newRevealed);
+                playSound('gem');
+                if (newRevealed.length === 25 - minesCount) {
+                    setIsPlaying(false);
+                    setGameOverState('win');
+                    const finalMult = calculateMultiplier(minesCount, newRevealed.length);
+                    const finalWin = betAmount * finalMult;
+                    const profit = finalWin - betAmount;
+                    addWinnings(finalWin / activeFiat.rate);
+                    activeBetRef.current = 0;
+                    showToast('win', t('mines.all_gems'), t('crash.win_desc').replace('{amount}', () => `${activeFiat.symbol}${profit.toFixed(2)}`).replace('{multiplier}', finalMult.toFixed(2)), 4000);
+                }
+                return;
+            }
             // Hit a mine (BOMB)
             setRevealedTiles(prev => [...prev, index]);
             playSound('bomb');
             endGame('loss');
         } else {
-            // Hit a gem
             const newRevealed = [...revealedTiles, index];
             setRevealedTiles(newRevealed);
             playSound('gem');
@@ -244,9 +252,10 @@ function MinesGame() {
                 const finalMult = calculateMultiplier(minesCount, newRevealed.length);
                 const finalWin = betAmount * finalMult;
                 const profit = finalWin - betAmount;
-                addWinnings(finalWin);
-
-                showToast('win', t('mines.all_gems'), `+${activeFiat.symbol}${profit.toFixed(2)} at ${finalMult.toFixed(2)}×`, 4000);
+                addWinnings(finalWin / activeFiat.rate);
+                activeBetRef.current = 0;
+                incrementWinstreak();
+                showToast('win', t('mines.all_gems'), t('crash.win_desc').replace('{amount}', () => `${activeFiat.symbol}${profit.toFixed(2)}`).replace('{multiplier}', finalMult.toFixed(2)), 4000);
             }
         }
     };
@@ -425,54 +434,8 @@ function MinesGame() {
                         </div>
                     </div>
 
-                    {/* Debug Overlay */}
-                    {isDebugMode && debugData && (
-                        <div className="fixed-widget debug-widget fade-in-scale" ref={debugWidgetRef}>
-                            <div className="widget-header debug-widget-header" onMouseDown={handleDebugDragStart}>
-                                <div className="widget-title">
-                                    <BugOutlined style={{ color: '#1475e1', fontSize: 18 }} />
-                                    <span style={{ color: '#1475e1' }}>{t('mines.fairness_debug')}</span>
-                                </div>
-                                <div className="widget-actions">
-                                    <button className="widget-btn-icon" onMouseDown={(e) => e.stopPropagation()} onClick={() => setIsDebugMode(false)}>
-                                        <CloseOutlined />
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="widget-content debug-widget-content">
-                                <div className="debug-row">
-                                    <span className="debug-label">{t('mines.next_hash')}</span>
-                                    <span className="debug-value">{debugData.hash.substring(0, 16)}...</span>
-                                </div>
-                                <div className="debug-row">
-                                    <span className="debug-label">{t('mines.client_seed_label')}</span>
-                                    <span className="debug-value">{debugData.clientSeed?.substring(0, 10)}...</span>
-                                </div>
-                                <div className="debug-row">
-                                    <span className="debug-label">{t('mines.next_nonce')}</span>
-                                    <span className="debug-value">{debugData.nonce}</span>
-                                </div>
-                                <div className="debug-target">
-                                    {t('mines.mines_field')}: <span className="target-bin">{minesCount}</span>
-                                    <div style={{ fontSize: 13, color: '#fff', marginTop: 4, textShadow: 'none' }}>
-                                        {t('mines.positions')}: <span style={{ color: '#ff4d4f' }}>[{debugData.minePositions.join(', ')}]</span>
-                                    </div>
-                                </div>
-                                <div className="mines-debug-grid">
-                                    {Array.from({ length: 25 }, (_, i) => (
-                                        <div key={i} className={`mines-debug-cell ${debugData.minePositions.includes(i) ? 'is-mine' : 'is-gem'}`}>
-                                            {debugData.minePositions.includes(i) ? '💣' : '💎'}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     <GameControls
                         gameName="Mines"
-                        debugMode={isDebugMode}
-                        onDebugModeChange={setIsDebugMode}
                         soundEnabled={soundEnabled}
                         onSoundChange={setSoundEnabled}
                     />

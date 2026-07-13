@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../context/WalletContext'
 import { useUserId } from '../context/UserContext'
 
@@ -54,8 +53,7 @@ const RANK_STYLES = {
 }
 
 function LeaderboardPage() {
-    const navigate = useNavigate()
-    const { t, activeFiat } = useWallet()
+    const { t, activeFiat, totalDeposits } = useWallet()
     const { userId, displayName, photoUrl } = useUserId()
     const [entries, setEntries] = useState([])
     const [loading, setLoading] = useState(true)
@@ -102,7 +100,7 @@ function LeaderboardPage() {
                 setEntries(lb)
                 const me = lb.find(e => e.isCurrentUser || String(e.userId) === String(userId))
                 setMyEntry(me || null)
-                if (!me && userId && userId !== 'dev_user') {
+                if (!me && userId && userId !== 'dev_user' && totalDeposits > 0) {
                     ensureLeaderboardEntry()
                 }
             }
@@ -135,41 +133,22 @@ function LeaderboardPage() {
             flexDirection: 'column',
             gap: 12,
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button onClick={() => navigate(-1)} style={{
-                    background: 'var(--bg-tertiary)',
-                    border: 'none',
-                    color: 'var(--text-secondary)',
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    padding: '6px 10px',
-                    borderRadius: 8,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    flexShrink: 0,
-                }}>
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                </button>
-                <div style={{ flex: 1 }}>
-                    <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: 20, fontWeight: 700 }}>
-                        {t('nav.leaderboard')}
-                    </h2>
-                    <p style={{ margin: '2px 0 0', color: 'var(--text-muted)', fontSize: 12 }}>
-                        Top depositors
-                    </p>
-                </div>
+            <div style={{ textAlign: 'center' }}>
+                <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: 20, fontWeight: 700 }}>
+                    {t('nav.leaderboard')}
+                </h2>
+                <p style={{ margin: '2px 0 0', color: 'var(--text-muted)', fontSize: 12 }}>
+                    {t('leaderboard.top_depositors')}
+                </p>
             </div>
 
             {loading ? (
                 <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-                    Loading...
+                    {t('leaderboard.loading')}
                 </div>
             ) : entries.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-                    No entries yet
+                    {t('leaderboard.no_entries')}
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -228,7 +207,7 @@ function LeaderboardPage() {
                                         }}>
                                             {entry.displayName}
                                         </span>
-                                        {vip && (
+                                        {vip && entry.score > 0 && (
                                             <img src={getVIPImg(vip.name)} alt={vip.name} title={vip.name} style={{ width: 14, height: 14, flexShrink: 0 }} />
                                         )}
                                     </div>
@@ -247,7 +226,7 @@ function LeaderboardPage() {
                                     whiteSpace: 'nowrap',
                                     flexShrink: 0,
                                 }}>
-                                    {activeFiat.symbol}{entry.score.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    {activeFiat.symbol}{(entry.score * activeFiat.rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                             </div>
                         )
@@ -316,9 +295,9 @@ function LeaderboardPage() {
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                 }}>
-                                    {myEntry.displayName || 'You'}
+                                    {myEntry.displayName || t('leaderboard.you')}
                                 </span>
-                                {vip && <img src={getVIPImg(vip.name)} alt={vip.name} title={vip.name} style={{ width: 14, height: 14, flexShrink: 0 }} />}
+                                {vip && myEntry.score > 0 && <img src={getVIPImg(vip.name)} alt={vip.name} title={vip.name} style={{ width: 14, height: 14, flexShrink: 0 }} />}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
                                 {badges.map(b => (
@@ -333,7 +312,7 @@ function LeaderboardPage() {
                             whiteSpace: 'nowrap',
                             flexShrink: 0,
                         }}>
-                            {activeFiat.symbol}{(myEntry.score || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {activeFiat.symbol}{((myEntry.score || 0) * activeFiat.rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </div>
                 )

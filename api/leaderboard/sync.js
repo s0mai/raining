@@ -1,6 +1,7 @@
 import { getUserRankAndScore, saveUserMetadata, getTotalDeposits, updateLeaderboardScore, incrementTotalDeposits } from '../../lib/storage.js'
+import { withValidation } from '../../lib/withValidation.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
     const { userId, displayName, photoUrl, depositAmount } = req.body
@@ -22,6 +23,8 @@ export default async function handler(req, res) {
     res.json({
         rank: rankData?.rank || 0,
         score: rankData?.score || totalDeposits || 0,
-        verified: (rankData?.score || totalDeposits || 0) >= 1000,
+        verified: (rankData?.score || totalDeposits || 0) > 0,
     })
 }
+
+export default withValidation(handler)

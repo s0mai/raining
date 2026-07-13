@@ -1,547 +1,201 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { QRCodeSVG } from 'qrcode.react'
-import { useTonConnectUI } from '@tonconnect/ui-react'
+import { useNavigate, NavLink } from 'react-router-dom'
 import { useWallet } from '../context/WalletContext'
 import { useUserId } from '../context/UserContext'
-import CryptoImg from '../components/CryptoImg'
 import { cryptos } from '../data/cryptos'
+import DepositAddressFlow from '../components/DepositAddressFlow'
+import Header from '../components/Header'
 import './DepositPage.css'
 
-const COINGECKO_IDS = { btc: 'bitcoin', eth: 'ethereum', ton: 'the-open-network', ltc: 'litecoin', sol: 'solana', usdt: 'tether' }
 const API_BASE = import.meta.env.VITE_API_URL || ''
 const IS_DEV = import.meta.env.DEV
-const PLATFORM_TON_WALLET = 'UQBbY_WYNPKoxPEplMIc6i_q_iJXzs4hpYU8G2WqYvZCr93W'
 
 function DepositPage() {
-    const { balance, balances, totalBalance, activeCurrency, updateBalance, syncBalance, showToast, addTransaction, deposit, setBalances, t, activeFiat } = useWallet()
+    const navigate = useNavigate()
+    const { syncBalance, showToast, setBalances, activeFiat } = useWallet()
     const { userId } = useUserId()
-    const [tonConnectUI] = useTonConnectUI()
-    const [selectedCrypto, setSelectedCrypto] = useState(null)
-    const [activeTab, setActiveTab] = useState('deposit')
-    const [copied, setCopied] = useState(false)
-    const [withdrawAddress, setWithdrawAddress] = useState('')
-    const [withdrawAmount, setWithdrawAmount] = useState('')
-    const [withdrawError, setWithdrawError] = useState({})
-    const [depositInfo, setDepositInfo] = useState(null)
-    const [depositLoading, setDepositLoading] = useState(false)
-    const [depositError, setDepositError] = useState('')
-    const [tonConfirming, setTonConfirming] = useState(false)
-    const [prices, setPrices] = useState({})
-    const [depositUsd, setDepositUsd] = useState('')
-    const [depositAmount, setDepositAmount] = useState('')
-    const [bonusPopup, setBonusPopup] = useState(null)
+    const [selectedCoin, setSelectedCoin] = useState(null)
+    const [selectedNetwork, setSelectedNetwork] = useState(null)
+    const [address, setAddress] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
     const prevBalRef = useRef(null)
-    const bonusClaimedRef = useRef(false)
 
     useEffect(() => {
-        if (userId && userId !== 'dev_user') {
-            syncBalance(userId)
-        }
+        if (userId && userId !== 'dev_user') syncBalance(userId)
     }, [userId])
 
     useEffect(() => {
-        const FALLBACK_PRICES = { btc: 67000, eth: 3400, ton: 6.5, ltc: 85, sol: 140, usdt: 1 }
-        setPrices(FALLBACK_PRICES)
+        if (!address || !selectedCoin) return
 
-        function fetchPrices() {
-            const ids = Object.values(COINGECKO_IDS).join(',')
-            fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`)
-                .then(r => r.json())
-                .then(data => {
-                    const mapped = {}
-                    let valid = true
-                    for (const [key, val] of Object.entries(COINGECKO_IDS)) {
-                        const p = data[val]?.usd
-                        if (p) mapped[key] = p
-                        else valid = false
-                    }
-                    if (valid) setPrices(mapped)
-                })
-                .catch(() => {})
-        }
-
-        fetchPrices()
-        const interval = setInterval(fetchPrices, 60000)
-        return () => clearInterval(interval)
-    }, [])
-
-    useEffect(() => {
-        if (!selectedCrypto) {
-            setDepositInfo(null)
-            setDepositLoading(false)
-            setDepositError('')
-            setTonConfirming(false)
-            setDepositUsd('')
-        }
-    }, [selectedCrypto])
-
-    // Poll balance when a deposit address is shown and apply 100% bonus
-    useEffect(() => {
-        if (!depositInfo || depositInfo.status === 'finished' || depositInfo.status === 'expired') return
-        const coin = selectedCrypto?.id
-        prevBalRef.current = balances[coin] || 0
-        bonusClaimedRef.current = false
+        const coin = selectedCoin.id
+        prevBalRef.current = null
 
         const interval = setInterval(async () => {
-            if (!userId || userId === 'dev_user' || !coin) return
+            if (!userId || userId === 'dev_user') return
             try {
                 const resp = await fetch(`${API_BASE}/api/balance?userId=${userId}`)
                 if (resp.ok) {
                     const data = await resp.json()
                     if (data.balances) {
-                        const newCoinBal = data.balances[coin] || 0
-                        const prevCoinBal = prevBalRef.current
-                        if (newCoinBal > prevCoinBal && !bonusClaimedRef.current) {
-                            const diff = newCoinBal - prevCoinBal
-                            bonusClaimedRef.current = true
-                            try {
-                                const check = await fetch(`${API_BASE}/api/bonus/first-deposit?userId=${userId}`)
-                                const checkData = await check.json()
-                                if (checkData.claimed) return
-                            } catch { /* fall through, apply bonus anyway */ }
-                            setBonusPopup({ amount: diff, coin })
-                            deposit(diff, coin, true)
-                            try { localStorage.setItem('stake_has_visited', '1') } catch {}
-                            showToast('win', t('deposit.bonus_popup_title'), t('deposit.bonus_popup_sub').replace('${amount}', diff.toFixed(2)), 6000)
-                            try {
-                                await fetch(`${API_BASE}/api/bonus/first-deposit`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ userId }),
-                                })
-                            } catch { /* ignore */ }
+                        const newBal = data.balances[coin] || 0
+                        const prevBal = prevBalRef.current
+
+                        if (prevBal !== null && newBal > prevBal) {
+                            const diff = newBal - prevBal
+                            showToast('win', 'Deposit Received', `+${activeFiat.symbol}${diff.toFixed(2)} ${selectedCoin.symbol}`, 5000)
                         }
-                        prevBalRef.current = newCoinBal
+
+                        prevBalRef.current = newBal
                         setBalances(data.balances)
                     }
                 }
-            } catch (e) { /* ignore */ }
+            } catch {}
         }, 5000)
+
         return () => clearInterval(interval)
-    }, [depositInfo?.status, selectedCrypto?.id])
+    }, [address, selectedCoin?.id])
 
-    const estimatedCrypto = selectedCrypto && prices[selectedCrypto.id] && depositUsd
-        ? parseFloat(depositUsd) / prices[selectedCrypto.id]
-        : null
-
-    function handleUsdChange(val) {
-        setDepositUsd(val)
-        if (selectedCrypto && selectedCrypto.id === 'ton') {
-            const tonVal = parseFloat(val) / (prices.ton || 0)
-            setDepositAmount(tonVal ? tonVal.toFixed(6) : '')
-        }
-    }
-
-    async function handleInitiateDeposit() {
-        if (!selectedCrypto) return
-        setDepositLoading(true)
-        setDepositError('')
-        setDepositInfo(null)
+    async function handleCoinChange(coin) {
+        setSelectedCoin(coin)
+        setAddress('')
+        setError('')
+        setSelectedNetwork(coin?.networks?.[0]?.id || null)
 
         if (IS_DEV) {
-            setDepositError('Deposits require the Vercel backend deployment. Use https://raining-one.vercel.app to test deposits.')
-            setDepositLoading(false)
+            setError('Deposits require the Vercel backend deployment.')
             return
         }
 
+        setLoading(true)
         try {
-            if (selectedCrypto.id === 'ton') {
-                if (!tonConnectUI.connected) {
-                    await tonConnectUI.openModal()
-                    setDepositLoading(false)
-                    return
-                }
-                const amount = parseFloat(depositAmount)
-                if (isNaN(amount) || amount <= 0) {
-                    throw new Error('Enter a valid amount')
-                }
-                const tx = {
-                    validUntil: Math.floor(Date.now() / 1000) + 600,
-                    messages: [
-                        {
-                            address: await fetchPlatformTonAddress(),
-                            amount: (amount * 1e9).toString(),
-                        },
-                    ],
-                }
-                await tonConnectUI.sendTransaction(tx)
-                setTonConfirming(true)
-                setDepositInfo({ status: 'confirming', message: 'Transaction sent. Waiting for confirmation...' })
-                trackTonTransaction(userId, amount)
-            } else {
-                const resp = await fetch(`${API_BASE}/api/create-deposit`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId,
-                        currency: selectedCrypto.id,
-                        amount: depositUsd || undefined,
-                    }),
-                })
-                const data = await resp.json()
-                if (!resp.ok) {
-                    throw new Error(data.error || 'Failed to create deposit')
-                }
-                setDepositInfo({
-                    status: data.status || 'waiting',
-                    address: data.address,
-                    pay_amount: data.pay_amount,
-                    pay_currency: data.pay_currency,
-                    price_amount: data.price_amount,
-                    payment_id: data.payment_id,
-                    invoice_url: data.invoice_url,
-                })
-            }
-        } catch (e) {
-            setDepositError(e.message || 'Failed to initiate deposit')
-        } finally {
-            setDepositLoading(false)
-        }
-    }
-
-    async function fetchPlatformTonAddress() {
-        try {
-            const resp = await fetch(`${API_BASE}/api/connect-ton`)
-            const data = await resp.json()
-            return data.address || PLATFORM_TON_WALLET
-        } catch {
-            return PLATFORM_TON_WALLET
-        }
-    }
-
-    async function trackTonTransaction(userId, expectedAmount) {
-        try {
-            const resp = await fetch(`${API_BASE}/api/track-ton`, {
+            const resp = await fetch(`${API_BASE}/api/create-deposit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, expectedAmount }),
+                body: JSON.stringify({
+                    userId,
+                    currency: coin.id,
+                    network: coin?.networks?.[0]?.id || null,
+                }),
             })
             const data = await resp.json()
-            if (data.confirmed) {
-                syncBalance(userId)
-                showToast('win', 'Deposit Confirmed', `+${data.amount} TON`, 5000)
-            }
+            if (!resp.ok) throw new Error(data.error || 'Failed to create deposit')
+            setAddress(data.address || '')
         } catch (e) {
-            console.error('Failed to track TON tx:', e)
+            setError(e.message || 'Failed to initiate deposit')
+        } finally {
+            setLoading(false)
         }
-    }
-
-    function openModal(crypto) {
-        setSelectedCrypto(crypto)
-        setActiveTab('deposit')
-        setCopied(false)
-        setWithdrawAddress('')
-        setWithdrawAmount('')
-        setWithdrawError({})
-        setDepositAmount('')
-        setDepositUsd('')
-        setDepositInfo(null)
-        setDepositError('')
-        setTonConfirming(false)
-    }
-
-    function handleCopy(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            setCopied(true)
-            setTimeout(() => setCopied(false), 2000)
-        })
-    }
-
-    function handleWithdraw() {
-        if (IS_DEV) {
-            setWithdrawError({ address: 'Withdrawals require the Vercel backend. Use https://raining-one.vercel.app' })
-            return
-        }
-        const errors = {}
-        if (!withdrawAddress.trim()) {
-            errors.address = t('deposit.address_empty')
-        }
-        const coinBalance = balances[selectedCrypto?.id] || 0
-        const amount = parseFloat(withdrawAmount)
-        if (isNaN(amount) || amount <= 0) {
-            errors.amount = t('deposit.invalid_amount')
-        } else if (amount > coinBalance) {
-            errors.amount = t('deposit.exceeds_balance')
-        }
-        if (Object.keys(errors).length > 0) {
-            setWithdrawError(errors)
-            return
-        }
-        updateBalance(coinBalance - amount)
-        addTransaction('withdraw', -amount, selectedCrypto.id)
-        setSelectedCrypto(null)
-        setWithdrawAddress('')
-        setWithdrawAmount('')
-        setWithdrawError({})
-        showToast('win', 'Withdrawal Submitted', `-${activeFiat.symbol}${amount.toFixed(2)} ${selectedCrypto.symbol}`, 3000)
     }
 
     return (
         <div className="deposit-page">
-            <div className="deposit-header">
-                <Link to="/" className="deposit-back">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+            <Header />
+            <div className="deposit-nav-scroll">
+                <button className="dn-item" onClick={() => navigate('/profile')}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2C9.38 2 7.25 4.13 7.25 6.75c0 2.57 2.01 4.65 4.63 4.74.08-.01.16-.01.22 0h.07a4.738 4.738 0 0 0 4.58-4.74C16.75 4.13 14.62 2 12 2ZM17.08 14.149c-2.79-1.86-7.34-1.86-10.15 0-1.27.85-1.97 2-1.97 3.23s.7 2.37 1.96 3.21c1.4.94 3.24 1.41 5.08 1.41 1.84 0 3.68-.47 5.08-1.41 1.26-.85 1.96-1.99 1.96-3.23-.01-1.23-.7-2.37-1.96-3.21Z" fill="currentColor" />
                     </svg>
-                </Link>
-                <h1>{t('deposit.title')}</h1>
+                    <span>Profile</span>
+                </button>
+                <button className={`dn-item${true ? ' active' : ''}`} onClick={() => navigate('/deposit')}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="m 11.94 2.212 l -2.41 5.61 H 7.12 c -0.4 0 -0.79 0.03 -1.17 0.11 l 1 -2.4 l 0.04 -0.09 l 0.06 -0.16 c 0.03 -0.07 0.05 -0.13 0.08 -0.18 c 1.16 -2.69 2.46 -3.53 4.81 -2.89 Z M 18.731 8.09 l -0.02 -0.01 c -0.6 -0.17 -1.21 -0.26 -1.83 -0.26 h -6.26 l 2.25 -5.23 l 0.03 -0.07 c 0.14 0.05 0.29 0.12 0.44 0.17 l 2.21 0.93 c 1.23 0.51 2.09 1.04 2.62 1.68 c 0.09 0.12 0.17 0.23 0.25 0.36 c 0.09 0.14 0.16 0.28 0.2 0.43 c 0.04 0.09 0.07 0.17 0.09 0.26 c 0.15 0.51 0.16 1.09 0.02 1.74 Z M 18.288 9.52 c -0.45 -0.13 -0.92 -0.2 -1.41 -0.2 h -9.76 c -0.68 0 -1.32 0.13 -1.92 0.39 a 4.894 4.894 0 0 0 -2.96 4.49 v 1.95 c 0 0.24 0.02 0.47 0.05 0.71 c 0.22 3.18 1.92 4.88 5.1 5.09 c 0.23 0.03 0.46 0.05 0.71 0.05 h 7.8 c 3.7 0 5.65 -1.76 5.84 -5.26 c 0.01 -0.19 0.02 -0.39 0.02 -0.59 V 14.2 a 4.9 4.9 0 0 0 -3.47 -4.68 Z m -3.79 6.67 h -1.75 V 18 c 0 0.41 -0.34 0.75 -0.75 0.75 s -0.75 -0.34 -0.75 -0.75 v -1.81 h -1.75 a 0.749 0.749 0 1 1 0 -1.5 h 1.75 V 13 c 0 -0.41 0.34 -0.75 0.75 -0.75 s 0.75 0.34 0.75 0.75 v 1.69 h 1.75 a 0.749 0.749 0 1 1 0 1.5 Z" />
+                    </svg>
+                    <span>Deposit</span>
+                </button>
+                <button className="dn-item" onClick={() => navigate('/withdraw')}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="m 11.94 2.212 l -2.41 5.61 H 7.12 c -0.4 0 -0.79 0.03 -1.17 0.11 l 1 -2.4 l 0.04 -0.09 l 0.06 -0.16 c 0.03 -0.07 0.05 -0.13 0.08 -0.18 c 1.16 -2.69 2.46 -3.53 4.81 -2.89 Z M 18.731 8.09 l -0.02 -0.01 c -0.6 -0.17 -1.21 -0.26 -1.83 -0.26 h -6.26 l 2.25 -5.23 l 0.03 -0.07 c 0.14 0.05 0.29 0.12 0.44 0.17 l 2.21 0.93 c 1.23 0.51 2.09 1.04 2.62 1.68 c 0.09 0.12 0.17 0.23 0.25 0.36 c 0.09 0.14 0.16 0.28 0.2 0.43 c 0.04 0.09 0.07 0.17 0.09 0.26 c 0.15 0.51 0.16 1.09 0.02 1.74 Z M 18.288 9.52 c -0.45 -0.13 -0.92 -0.2 -1.41 -0.2 h -9.76 c -0.68 0 -1.32 0.13 -1.92 0.39 a 4.894 4.894 0 0 0 -2.96 4.49 v 1.95 c 0 0.24 0.02 0.47 0.05 0.71 c 0.22 3.18 1.92 4.88 5.1 5.09 c 0.23 0.03 0.46 0.05 0.71 0.05 h 7.8 c 3.7 0 5.65 -1.76 5.84 -5.26 c 0.01 -0.19 0.02 -0.39 0.02 -0.59 V 14.2 a 4.9 4.9 0 0 0 -3.47 -4.68 Z m -3.79 7.23 h -5 c -0.41 0 -0.75 -0.34 -0.75 -0.75 s 0.34 -0.75 0.75 -0.75 h 5 c 0.41 0 0.75 0.34 0.75 0.75 s -0.34 0.75 -0.75 0.75 Z" fill="currentColor" />
+                    </svg>
+                    <span>Withdraw</span>
+                </button>
+                <button className="dn-item" onClick={() => navigate('/bonuses')}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 12V18C20 20.21 18.21 22 16 22H8C5.79 22 4 20.21 4 18V12C4 11.45 4.45 11 5 11H6.97C7.52 11 7.97 11.45 7.97 12V15.14C7.97 15.88 8.38 16.56 9.03 16.91C9.32 17.07 9.64 17.15 9.97 17.15C10.35 17.15 10.73 17.04 11.06 16.82L12.01 16.2L12.89 16.79C13.5 17.2 14.28 17.25 14.93 16.9C15.59 16.55 16 15.88 16 15.13V12C16 11.45 16.45 11 17 11H19C19.55 11 20 11.45 20 12Z" fill="currentColor"/>
+                        <path d="M21.5 7V8C21.5 9.1 20.97 10 19.5 10H4.5C2.97 10 2.5 9.1 2.5 8V7C2.5 5.9 2.97 5 4.5 5H19.5C20.97 5 21.5 5.9 21.5 7Z" fill="currentColor"/>
+                        <path d="M11.6388 5.00141H6.11881C5.77881 4.63141 5.78881 4.06141 6.14881 3.70141L7.56881 2.28141C7.93881 1.91141 8.54881 1.91141 8.91881 2.28141L11.6388 5.00141Z" fill="currentColor"/>
+                        <path d="M17.8716 5.00141H12.3516L15.0716 2.28141C15.4416 1.91141 16.0516 1.91141 16.4216 2.28141L17.8416 3.70141C18.2016 4.06141 18.2116 4.63141 17.8716 5.00141Z" fill="currentColor"/>
+                        <path d="M13.9714 11C14.5214 11 14.9714 11.45 14.9714 12V15.13C14.9714 15.93 14.0814 16.41 13.4214 15.96L12.5214 15.36C12.1914 15.14 11.7614 15.14 11.4214 15.36L10.4814 15.98C9.82141 16.42 8.94141 15.94 8.94141 15.15V12C8.94141 11.45 9.39141 11 9.94141 11H13.9714Z" fill="currentColor"/>
+                    </svg>
+                    <span>Bonuses</span>
+                </button>
+                <button className="dn-item" onClick={() => navigate('/settings')}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M10.825 22q-.675 0-1.162-.45t-.588-1.1L8.85 18.8q-.325-.125-.612-.3t-.563-.375l-1.55.65q-.625.275-1.25.05t-.975-.8l-1.175-2.05q-.35-.575-.2-1.225t.675-1.075l1.325-1Q4.5 12.5 4.5 12.337v-.675q0-.162.025-.337l-1.325-1Q2.675 9.9 2.525 9.25t.2-1.225L3.9 5.975q.35-.575.975-.8t1.25.05l1.55.65q.275-.2.575-.375t.6-.3l.225-1.65q.1-.65.588-1.1T10.825 2h2.35q.675 0 1.163.45t.587 1.1l.225 1.65q.325.125.613.3t.562.375l1.55-.65q.625-.275 1.25-.05t.975.8l1.175 2.05q.35.575.2 1.225t-.675 1.075l-1.325 1q.025.175.025.338v.674q0 .163-.05.338l1.325 1q.525.425.675 1.075t-.2 1.225l-1.2 2.05q-.35.575-.975.8t-1.25-.05l-1.5-.65q-.275.2-.575.375t-.6.3l-.225 1.65q-.1.65-.587 1.1t-1.163.45zM12.05 15.5q1.45 0 2.475-1.025T15.55 12t-1.025-2.475T12.05 8.5q-1.475 0-2.488 1.025T8.55 12t1.013 2.475T12.05 15.5" />
+                    </svg>
+                    <span>Settings</span>
+                </button>
+                <button className="dn-item" onClick={() => navigate('/affiliate')}>
+                    <svg width="18" height="18" viewBox="0 0 30 30" fill="none">
+                        <path d="M 24.5643 9.483 C 23.7293 9.48364 22.9237 9.77896 22.3019 10.3125 C 21.6801 10.8459 21.2857 11.5802 21.1941 12.3746 L 21.1925 12.3893 L 18.5665 13.062 C 18.1925 12.5987 17.692 12.2433 17.1202 12.0351 L 17.0971 12.0281 V 9.28704 C 18.3674 8.79636 19.2473 7.62605 19.2473 6.25822 C 19.2473 4.45881 17.7239 3 15.843 3 C 14.9402 3.00021 14.0745 3.34357 13.4362 3.95459 C 12.798 4.5656 12.4394 5.39422 12.4394 6.25822 C 12.4392 6.90739 12.6416 7.54182 13.0207 8.08016 C 13.3997 8.61849 13.9382 9.03618 14.5669 9.27966 L 14.5893 9.28743 V 11.9457 C 14.3035 12.0506 14.0354 12.1951 13.7934 12.3746 L 13.8007 12.3691 L 8.80794 9.76295 C 8.81318 9.66762 8.81318 9.5721 8.80794 9.47678 V 9.48378 C 8.80794 7.68398 7.2845 6.22556 5.40397 6.22556 C 4.50114 6.22566 3.63533 6.56898 2.99697 7.18001 C 2.35862 7.79103 2 8.61971 2 9.48378 C 2.00011 10.3478 2.35883 11.1765 2.99726 11.7874 C 3.63569 12.3984 4.50155 12.7416 5.40438 12.7416 C 6.23782 12.7416 7.04082 12.4418 7.65419 11.9018 L 7.65175 11.9037 L 12.4926 14.4582 C 12.4759 14.6413 12.4762 14.8254 12.4934 15.0084 L 12.4926 14.9967 C 12.4931 15.4341 12.5842 15.867 12.7608 16.2704 L 12.7522 16.2487 L 8.96962 19.7647 C 8.53371 19.5682 8.05803 19.4657 7.57619 19.4645 H 7.57538 L 7.51038 19.4637 C 7.06194 19.4637 6.61789 19.5483 6.2036 19.7125 C 5.7893 19.8768 5.41287 20.1175 5.09579 20.421 C 4.77872 20.7245 4.52722 21.0848 4.35564 21.4814 C 4.18407 21.8779 4.09579 22.3029 4.09584 22.7321 C 4.09584 23.1612 4.18418 23.5862 4.3558 23.9827 C 4.52742 24.3792 4.77897 24.7395 5.09608 25.043 C 5.41319 25.3464 5.78966 25.5871 6.20397 25.7514 C 6.61829 25.9156 7.06234 26 7.51078 26 C 7.95918 26 8.4032 25.9155 8.81747 25.7512 C 9.23174 25.587 9.60815 25.3463 9.92522 25.0428 C 10.2423 24.7394 10.4938 24.3791 10.6654 23.9826 C 10.837 23.5862 10.9253 23.1612 10.9253 22.7321 C 10.9394 22.2853 10.8521 21.8409 10.6694 21.4295 L 10.6775 21.4498 L 14.4597 17.9334 C 14.8945 18.1252 15.3678 18.2239 15.8466 18.2227 H 15.8547 C 16.3406 18.2343 16.8217 18.1246 17.2471 17.9031 C 17.6725 17.6817 18.0285 17.3544 18.2815 16.9546 C 18.5346 16.5548 18.6768 16.0959 18.6929 15.6236 C 18.709 15.1514 18.5986 14.6842 18.3728 14.2687 L 18.3775 14.2789 L 22.1609 10.7638 C 21.9135 10.3398 21.785 9.86457 21.7855 9.38238 C 21.7855 7.50335 23.3502 6 25.2895 6 C 26.4676 6 27.5196 6.61581 28.0743 7.5655 C 28.3612 8.08142 28.5097 8.65537 28.5068 9.23787 C 28.5096 9.84682 28.3469 10.4455 28.0359 10.9729 C 27.7248 11.5002 27.2763 11.9384 26.7362 12.2357 C 26.1961 12.533 25.5848 12.6786 24.9684 12.6565 L 24.9781 12.6567 L 22.3537 13.3285 C 22.2961 13.741 22.139 14.1345 21.8944 14.478 C 21.6499 14.8215 21.3238 15.1069 20.9411 15.3132 C 21.4542 15.6415 21.861 16.0973 22.1196 16.6291 C 22.3782 17.1609 22.4793 17.7494 22.4117 18.332 C 22.344 18.9147 22.1098 19.47 21.7316 19.9387 C 21.3533 20.4074 20.8447 20.7712 20.2623 20.9924 C 20.3751 21.5776 20.3214 22.1798 20.1071 22.7389 C 19.8928 23.2979 19.5248 23.7925 19.0413 24.1702 C 18.5577 24.548 17.9767 24.7954 17.3612 24.8882 C 16.7457 24.9811 16.1179 24.9163 15.5341 24.6999 C 14.9503 24.4836 14.4303 24.1234 14.0227 23.6536 C 13.615 23.1837 13.3331 22.6203 13.2018 22.0174 C 13.0705 21.4145 13.0943 20.7909 13.2703 20.199 L 13.2675 20.2086 L 17.03 16.673 C 17.4117 16.8624 17.835 16.9611 18.2654 16.9605 C 18.6977 16.9605 19.1191 16.8624 19.5029 16.673 H 19.5025 L 18.2588 16.5005 L 19.5029 16.673 C 19.8724 16.4929 20.1933 16.2348 20.4426 15.9179 C 20.6919 15.6009 20.8633 15.2332 20.9446 14.8411 C 21.0259 14.4491 21.015 14.0431 20.9126 13.6553 C 20.8102 13.2675 20.619 12.9079 20.353 12.6032 C 20.0871 12.2984 19.7535 12.0563 19.3764 11.893 C 18.9993 11.7297 18.589 11.6495 18.1759 11.6585 C 17.7628 11.6676 17.3566 11.7658 16.9874 11.9457 C 16.6182 12.1256 16.2958 12.3824 16.0437 12.6988 C 15.7916 13.0153 15.6162 13.3833 15.5311 13.7755 L 15.5315 13.7735 L 12.5332 14.2821 L 12.5319 14.2862 C 12.4124 13.8513 12.2012 13.4455 11.9166 13.0989 C 11.632 12.7523 11.2799 12.4709 10.8769 12.2635 L 10.885 12.2679 L 15.7205 9.70875 C 16.0839 9.89615 16.4868 9.99542 16.8965 9.9975 C 17.1572 9.99828 17.4153 9.94891 17.6535 9.85262 L 17.6448 9.85581 L 15.2581 8.49181 L 17.6448 9.85581 C 17.8827 9.76158 18.0936 9.62108 18.2648 9.44396 C 18.436 9.26685 18.5633 9.0575 18.6379 8.83139 C 18.7125 8.60527 18.7328 8.3679 18.6977 8.13408 C 18.6625 7.90025 18.5728 7.6747 18.4422 7.47083 C 18.3115 7.26696 18.1419 7.08864 17.9421 6.94625 C 17.7423 6.80387 17.515 6.69957 17.2724 6.63847 C 17.0298 6.57738 16.7756 6.56024 16.5255 6.58796 C 16.2754 6.61568 16.0332 6.68782 15.8112 6.80008 L 15.8202 6.79588 L 13.1257 5.24138 C 13.5072 4.71376 13.7219 4.09983 13.7482 3.46554 C 13.7745 2.83125 13.6121 2.20274 13.2829 1.64873 L 13.285 1.65325 C 13.1773 1.22335 12.9553 0.827461 12.6379 0.498289 C 12.3205 0.169117 11.9169 -0.0841704 11.46 -0.241941 C 11.0031 -0.399712 10.5067 -0.456954 10.0171 -0.409506 C 9.52754 -0.362059 9.0594 -0.211478 8.6536 0.0313039 L 8.66089 0.0269467 C 8.16649 0.490638 7.81324 1.06859 7.63979 1.7005 C 7.46633 2.33242 7.47934 2.99672 7.67706 3.62154 L 7.67392 3.61258 L 5.04082 5.1358 C 4.67959 4.98178 4.28971 4.90128 3.89522 4.89898 C 3.56092 4.89898 3.23046 4.96556 2.92592 5.09683 C 2.62138 5.2281 2.34934 5.42088 2.12756 5.66139 C 1.90577 5.90191 1.7388 6.1845 1.63686 6.48988 C 1.53493 6.79527 1.5 7.11586 1.53415 7.43101 C 1.5683 7.74616 1.67064 8.04862 1.83455 8.31815 C 1.99846 8.58769 2.22011 8.81768 2.48455 8.99256 C 2.74899 9.16744 3.05006 9.28278 3.3674 9.32916 C 3.68473 9.37553 4.01046 9.3517 4.31792 9.25937 L 4.30935 9.2619 L 9.60434 11.7836 C 9.56678 11.9216 9.53786 12.0615 9.51775 12.2026 L 9.5131 12.2357 L 9.50559 12.3893 L 9.5064 12.3919 C 9.47083 12.5962 9.44949 12.8025 9.44252 13.0094 L 9.44194 13.0609 C 9.44047 13.5239 9.53108 13.9827 9.70817 14.414 L 9.70078 14.3938 L 4.80595 17.0328 C 4.48675 16.8934 4.14108 16.8217 3.79079 16.8221 H 3.77225 C 3.50224 16.8224 3.23653 16.8789 2.99344 16.9866 C 2.75036 17.0944 2.53481 17.2497 2.35629 17.4415 L 2.35933 17.4382 C 2.07478 18.1284 2.10237 18.8941 2.43547 19.5665 L 2.42707 19.5497 L 1.22941 21.645 C 1.08092 21.8939 0.992738 22.1707 0.972041 22.4544 C 0.951344 22.738 0.998597 23.0215 1.11098 23.2847 C 1.22337 23.548 1.39846 23.7845 1.62393 23.9776 C 1.8494 24.1706 2.11971 24.3164 2.41478 24.4046 C 2.70986 24.4928 3.02282 24.5218 3.33144 24.4898 C 3.64006 24.4578 3.93714 24.3658 4.20149 24.2206 C 4.46584 24.0753 4.6915 23.8806 4.86251 23.6505 L 4.8599 23.6543 L 6.00825 21.5443 C 6.3857 21.5883 6.76894 21.5481 7.12668 21.4292 L 7.11292 21.4339 L 8.27201 23.4373 C 8.46628 23.7537 8.74071 24.0225 9.0715 24.2183 C 9.40229 24.4142 9.77975 24.5314 10.1722 24.5592 C 10.5647 24.5869 10.9602 24.5243 11.3254 24.3741 C 11.6906 24.2239 12.0152 23.9888 12.2732 23.6902 C 12.5313 23.3915 12.7161 23.0353 12.8146 22.6512 C 12.9131 22.2672 12.9226 21.8616 12.8424 21.4731 C 12.7622 21.0846 12.5945 20.7198 12.3485 20.4027 C 12.1026 20.0855 11.7835 19.8254 11.4134 19.6477 L 11.4253 19.6537 L 15.2205 16.1263 C 15.5118 16.4325 15.8799 16.6653 16.2909 16.8028 L 16.2709 16.7959 Z" fill="currentColor"/>
+                    </svg>
+                    <span>Affiliate Program</span>
+                </button>
             </div>
-            <div className="deposit-balance">
-                <span className="deposit-balance-label">{selectedCrypto ? `${selectedCrypto.name} ${t('deposit.balance')}` : t('deposit.total_balance')}</span>
-                <span className="deposit-balance-amount">{activeFiat.symbol}{selectedCrypto ? ((balances[selectedCrypto.id] || 0) * activeFiat.rate).toFixed(2) : (totalBalance * activeFiat.rate).toFixed(2)}</span>
-            </div>
-            {!selectedCrypto && (
-                <div className="deposit-bonus-banner">
-                    <div className="deposit-bonus-banner-glow" />
-                    <div className="deposit-bonus-banner-content">
-                        <div className="deposit-bonus-banner-left">
-                            <span className="deposit-bonus-banner-badge">{t('deposit.bonus_badge')}</span>
-                            <span className="deposit-bonus-banner-text">{t('deposit.bonus_banner')}</span>
-                        </div>
+            <div className="deposit-body">
+                <DepositAddressFlow
+                    address={address}
+                    coin={selectedCoin}
+                    coins={cryptos}
+                    onCoinChange={handleCoinChange}
+                    selectedNetwork={selectedNetwork}
+                    onNetworkChange={setSelectedNetwork}
+                />
+                {loading && (
+                    <div className="deposit-confirming">
+                        <div className="deposit-spinner" />
+                        <p>Creating deposit address...</p>
                     </div>
-                </div>
-            )}
-            <div className="deposit-crypto-list">
-                {cryptos.map(crypto => (
-                    <div key={crypto.id} className="deposit-crypto-item" onClick={() => openModal(crypto)}>
-                        <CryptoImg crypto={crypto} size={40} className="crypto-icon" />
-                        <div className="deposit-crypto-info">
-                            <span className="deposit-crypto-name">{crypto.name}</span>
-                            <span className="deposit-crypto-symbol">{crypto.symbol}</span>
-                        </div>
-                        <span className="deposit-crypto-balance">{activeFiat.symbol}{((balances[crypto.id] || 0) * activeFiat.rate).toFixed(2)}</span>
-                    </div>
-                ))}
-            </div>
+                )}
+                {error && <p className="deposit-error-msg">{error}</p>}
 
-            {selectedCrypto && (
-                <div className="deposit-modal-overlay" onClick={() => setSelectedCrypto(null)}>
-                    <div className="deposit-modal" onClick={e => e.stopPropagation()}>
-                        <div className="deposit-modal-header">
-                            <div className="deposit-modal-crypto">
-                                <CryptoImg crypto={selectedCrypto} size={28} className="crypto-icon" />
-                                <span>{selectedCrypto.name} ({selectedCrypto.symbol})</span>
-                            </div>
-                            <button className="deposit-modal-close" onClick={() => setSelectedCrypto(null)}>✕</button>
-                        </div>
-
-                        <div className="deposit-tabs">
-                            <button
-                                className={`deposit-tab${activeTab === 'deposit' ? ' active' : ''}`}
-                                onClick={() => setActiveTab('deposit')}
-                            >
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
-                                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-                                </svg>
-                                {t('deposit.tab_deposit')}
-                            </button>
-                            <button
-                                className={`deposit-tab${activeTab === 'withdraw' ? ' active' : ''}`}
-                                onClick={() => setActiveTab('withdraw')}
-                            >
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="12" y1="19" x2="12" y2="5" />
-                                    <polyline points="5 12 12 5 19 12" />
-                                    <polyline points="2 19 22 19" />
-                                </svg>
-                                {t('deposit.tab_withdraw')}
-                            </button>
-                        </div>
-
-                        {activeTab === 'deposit' && (
-                            <div className="deposit-tab-content">
-                                {!depositInfo && !tonConfirming && (
-                                    <>
-                                        <div className="deposit-box">
-                                            <div className="deposit-amount-field">
-                                                <label className="withdraw-label">{t('deposit.amount_usd')}</label>
-                                                <div className="withdraw-amount-row">
-                                                    <input
-                                                        type="number"
-                                                        className="withdraw-input"
-                                                        placeholder={t('deposit.placeholder_amount')}
-                                                        value={depositUsd}
-                                                        onChange={e => handleUsdChange(e.target.value)}
-                                                    />
-                                                </div>
-                                            </div>
-                                            {estimatedCrypto !== null && prices[selectedCrypto.id] > 0 && (
-                                                <div className="deposit-estimate-row">
-                                                    <span className="deposit-info-label">{t('deposit.estimated')} {selectedCrypto.symbol}</span>
-                                                    <span className="deposit-estimate-value">~{estimatedCrypto.toFixed(6)}</span>
-                                                </div>
-                                            )}
-                                            {selectedCrypto.id === 'ton' && (
-                                                <div className="deposit-amount-field" style={{ marginTop: 8 }}>
-                                                    <label className="withdraw-label">{t('deposit.enter_ton')}</label>
-                                                    <input
-                                                        type="number"
-                                                        className="withdraw-input"
-                                                        placeholder={t('deposit.placeholder_amount')}
-                                                        value={depositAmount}
-                                                        onChange={e => setDepositAmount(e.target.value)}
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="deposit-bonus-row">
-                                            <span className="deposit-bonus-label">{t('deposit.bonus_row')}</span>
-                                            <span className="deposit-bonus-value">{depositUsd > 0 ? `${activeFiat.symbol}${(parseFloat(depositUsd) * 2).toFixed(2)}` : `${activeFiat.symbol}0.00 ×2`}</span>
-                                        </div>
-                                        <button
-                                            className="deposit-action-btn"
-                                            onClick={handleInitiateDeposit}
-                                            disabled={depositLoading}
-                                        >
-                                            {depositLoading ? t('deposit.creating') : selectedCrypto.id === 'ton' ? (tonConnectUI.connected ? t('deposit.send_ton') : t('deposit.connect_wallet')) : t('deposit.generate_address')}
-                                        </button>
-                                        {depositError && <p className="deposit-error-msg">{depositError}</p>}
-                                    </>
-                                )}
-
-                                {depositInfo && depositInfo.status !== 'finished' && depositInfo.status !== 'expired' && (
-                                    <>
-                                        {depositInfo.invoice_url && (
-                                            <iframe
-                                                src={depositInfo.invoice_url.replace(/\/\?/, '?')}
-                                                className="deposit-iframe"
-                                                title="NowPayments Payment"
-                                                allow="payment"
-                                            />
-                                        )}
-                                        {depositInfo.address ? (
-                                            <>
-                                                <div className="deposit-qr-container">
-                                                    <QRCodeSVG
-                                                        value={depositInfo.address}
-                                                        size={140}
-                                                        bgColor="#ffffff"
-                                                        fgColor="#000000"
-                                                        level="M"
-                                                        includeMargin={false}
-                                                        style={{ borderRadius: 8 }}
-                                                    />
-                                                </div>
-                                                {depositInfo.pay_amount && (
-                                                    <div className="deposit-info-row">
-                                                        <span className="deposit-info-label">{t('deposit.send_exactly')}</span>
-                                                        <span className="deposit-info-value">{depositInfo.pay_amount} {depositInfo.pay_currency}</span>
-                                                    </div>
-                                                )}
-                                                {depositInfo.price_amount && (
-                                                    <div className="deposit-info-row">
-                                                        <span className="deposit-info-label">{t('deposit.value')}</span>
-                                                        <span className="deposit-info-value">~${depositInfo.price_amount} USD</span>
-                                                    </div>
-                                                )}
-                                                <div className="deposit-address-row">
-                                                    <input
-                                                        type="text"
-                                                        readOnly
-                                                        value={depositInfo.address}
-                                                        className="deposit-address-input"
-                                                    />
-                                                    <button className="deposit-copy-btn" onClick={() => handleCopy(depositInfo.address)}>
-                                                        {copied ? (
-                                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#1475e1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                                <polyline points="20 6 9 17 4 12" />
-                                                            </svg>
-                                                        ) : (
-                                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                                            </svg>
-                                                        )}
-                                                        <span>{copied ? t('deposit.copied') : t('deposit.copy')}</span>
-                                                    </button>
-                                                </div>
-                                                <p className="deposit-address-hint">
-                                                    {t('deposit.send_exact').replace('${currency}', depositInfo.pay_currency)}
-                                                </p>
-                                            </>
-                                        ) : (
-                                            <p className="deposit-address-hint" style={{ textAlign: 'center', marginTop: 8 }}>
-                                                {t('deposit.open_payment')}
-                                            </p>
-                                        )}
-                                    </>
-                                )}
-
-                                {tonConfirming && (
-                                    <div className="deposit-confirming">
-                                        <div className="deposit-spinner" />
-                                        <p>{t('deposit.waiting')}</p>
-                                        <p className="deposit-address-hint">{t('deposit.balance_auto')}</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'withdraw' && (
-                            <div className="deposit-tab-content">
-                                <div className="deposit-box">
-                                    <div className="withdraw-balance-ref">
-                                        <span>{t('deposit.available_balance').replace('${symbol}', selectedCrypto.symbol)}</span>
-                                        <span className="withdraw-balance-amount">{activeFiat.symbol}{(balances[selectedCrypto.id] || 0).toFixed(2)}</span>
-                                    </div>
-                                    <div className="withdraw-field">
-                                        <label className="withdraw-label">{t('deposit.dest_address')}</label>
-                                        <input
-                                            type="text"
-                                            className={`withdraw-input${withdrawError.address ? ' error' : ''}`}
-                                            placeholder={t('deposit.enter_address').replace('${symbol}', selectedCrypto.symbol)}
-                                            value={withdrawAddress}
-                                            onChange={e => { setWithdrawAddress(e.target.value); setWithdrawError({ ...withdrawError, address: null }) }}
-                                        />
-                                        {withdrawError.address && <span className="withdraw-error-msg">{withdrawError.address}</span>}
-                                    </div>
-                                    <div className="withdraw-field">
-                                        <label className="withdraw-label">{t('deposit.amount')}</label>
-                                        <div className="withdraw-amount-row">
-                                            <input
-                                                type="number"
-                                                className={`withdraw-input${withdrawError.amount ? ' error' : ''}`}
-                                                placeholder={t('deposit.placeholder_amount')}
-                                                value={withdrawAmount}
-                                                onChange={e => { setWithdrawAmount(e.target.value); setWithdrawError({ ...withdrawError, amount: null }) }}
-                                            />
-                                            <button className="withdraw-max-btn" onClick={() => setWithdrawAmount((balances[selectedCrypto.id] || 0).toString())}>
-                                                {t('deposit.max')}
-                                            </button>
-                                        </div>
-                                        {withdrawError.amount && <span className="withdraw-error-msg">{withdrawError.amount}</span>}
-                                    </div>
-                                </div>
-                                <button className="withdraw-confirm-btn" onClick={handleWithdraw}>
-                                    {t('deposit.confirm_withdraw')}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {bonusPopup && (
-                <div className="deposit-bonus-popup-overlay" onClick={() => setBonusPopup(null)}>
-                    <div className="deposit-bonus-popup" onClick={e => e.stopPropagation()}>
-                        <div className="deposit-bonus-popup-icon">
-                            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#ffd700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                <div className="deposits-history">
+                    <div className="dh-header">
+                        <div className="dh-header-left">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                                <path d="M16.19 2H7.81C4.17 2 2 4.17 2 7.81v8.38C2 19.83 4.17 22 7.81 22h8.38c3.64 0 5.81-2.17 5.81-5.81V7.81C22 4.17 19.83 2 16.19 2ZM9.97 14.9l-2.25 2.25c-.15.15-.34.22-.53.22s-.39-.07-.53-.22l-.75-.75c-.3-.29-.3-.77 0-1.06.29-.29.76-.29 1.06 0l.22.22 1.72-1.72c.29-.29.76-.29 1.06 0 .29.29.29.77 0 1.06Zm0-7-2.25 2.25c-.15.15-.34.22-.53.22s-.39-.07-.53-.22l-.75-.75c-.3-.29-.3-.77 0-1.06.29-.29.76-.29 1.06 0l.22.22 1.72-1.72c.29-.29.76-.29 1.06 0 .29.29.29.77 0 1.06Zm7.59 8.72h-5.25c-.41 0-.75-.34-.75-.75s.34-.75.75-.75h5.25a.749.749 0 1 1 0 1.5Zm0-7h-5.25c-.41 0-.75-.34-.75-.75s.34-.75.75-.75h5.25a.749.749 0 1 1 0 1.5Z" fill="currentColor" />
                             </svg>
+                            <span>Deposits History</span>
                         </div>
-                        <h2 className="deposit-bonus-popup-title">{t('deposit.bonus_popup_title')}</h2>
-                        <p className="deposit-bonus-popup-msg" dangerouslySetInnerHTML={{
-                            __html: t('deposit.bonus_popup_msg').replace('${amount}', `<strong>${activeFiat.symbol}${bonusPopup.amount.toFixed(2)}</strong>`),
-                        }} />
-                        <p className="deposit-bonus-popup-sub">{t('deposit.bonus_popup_sub').replace('${amount}', bonusPopup.amount.toFixed(2))}</p>
-                        <button className="deposit-bonus-popup-btn" onClick={() => setBonusPopup(null)}>
-                            {t('deposit.bonus_lets_play')}
-                        </button>
+                    </div>
+                    <div className="dh-table">
+                        <div className="dh-table-header">
+                            <div className="dh-col dh-col-currency">Currency</div>
+                            <div className="dh-col dh-col-amount">Amount</div>
+                            <div className="dh-col dh-col-status">Status</div>
+                            <div className="dh-col dh-col-date">Date</div>
+                            <div className="dh-col dh-col-more">More</div>
+                            <div className="dh-col-mobile dh-col-currency-amount">Currency/Amount</div>
+                            <div className="dh-col-mobile dh-col-status-date">Status/Date</div>
+                        </div>
+                        <div className="dh-empty">
+                            <div className="dh-empty-title">You do not have deposits</div>
+                            <div className="dh-empty-subtitle">Let's do your first on the Deposit page.</div>
+                            <button className="dh-empty-btn">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                    <path d="m11.94 2.212-2.41 5.61H7.12c-.4 0-.79.03-1.17.11l1-2.4.04-.09.06-.16c.03-.07.05-.13.08-.18 1.16-2.69 2.46-3.53 4.81-2.89ZM18.731 8.09l-.02-.01c-.6-.17-1.21-.26-1.83-.26h-6.26l2.25-5.23.03-.07c.14.05.29.12.44.17l2.21.93c1.23.51 2.09 1.04 2.62 1.68.09.12.17.23.25.36.09.14.16.28.2.43.04.09.07.17.09.26.15.51.16 1.09.02 1.74ZM18.288 9.52c-.45-.13-.92-.2-1.41-.2h-9.76c-.68 0-1.32.13-1.92.39a4.894 4.894 0 0 0-2.96 4.49v1.95c0 .24.02.47.05.71.22 3.18 1.92 4.88 5.1 5.09.23.03.46.05.71.05h7.8c3.7 0 5.65-1.76 5.84-5.26.01-.19.02-.39.02-.59V14.2a4.9 4.9 0 0 0-3.47-4.68Zm-3.79 6.67h-1.75V18c0 .41-.34.75-.75.75s-.75-.34-.75-.75v-1.81h-1.75a.749.749 0 1 1 0-1.5h1.75V13c0-.41.34-.75.75-.75s.75.34.75.75v1.69h1.75a.749.749 0 1 1 0 1.5Z" fill="currentColor" />
+                                </svg>
+                                Deposit
+                            </button>
+                        </div>
                     </div>
                 </div>
-            )}
+            </div>
+            <nav className="bottom-nav">
+                <NavLink to="/leaderboard" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                    <img src="/images/leaderboardicon.svg" alt="" className="bottom-nav-icon" />
+                    <span className="bottom-nav-label">Leaderboard</span>
+                </NavLink>
+                <NavLink to="/" end className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                    <img src="/images/games.svg" alt="" className="bottom-nav-icon" />
+                    <span className="bottom-nav-label">Games</span>
+                </NavLink>
+                <NavLink to="/profile" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                    <img src="/images/user.svg" alt="" className="bottom-nav-icon" />
+                    <span className="bottom-nav-label">Profile</span>
+                </NavLink>
+            </nav>
         </div>
     )
 }

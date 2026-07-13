@@ -1,6 +1,7 @@
 import { getBalances, setBalances, incrementTotalDeposits } from '../lib/storage.js'
+import { withValidation } from '../lib/withValidation.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' })
     }
@@ -65,3 +66,5 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'Failed to track transaction' })
     }
 }
+
+export default withValidation(handler)

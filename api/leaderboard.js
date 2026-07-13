@@ -14,7 +14,7 @@ export default async function handler(req, res) {
             score: entry.score,
             displayName: meta.displayName || 'Player',
             photoUrl: meta.photoUrl || null,
-            verified: entry.score >= 1000,
+            verified: entry.score > 0,
         }
     }))
 
@@ -28,16 +28,18 @@ export default async function handler(req, res) {
             }))
         } else {
             const rankData = await getUserRankAndScore(reqUserId)
-            const meta = await getUserMetadata(String(reqUserId)) || {}
-            leaderboard.push({
-                userId: String(reqUserId),
-                rank: rankData?.rank || 0,
-                score: rankData?.score || 0,
-                displayName: meta.displayName || 'Player',
-                photoUrl: meta.photoUrl || null,
-                verified: (rankData?.score || 0) >= 1000,
-                isCurrentUser: true,
-            })
+            if (rankData?.score > 0) {
+                const meta = await getUserMetadata(String(reqUserId)) || {}
+                leaderboard.push({
+                    userId: String(reqUserId),
+                    rank: rankData.rank || 0,
+                    score: rankData.score,
+                    displayName: meta.displayName || 'Player',
+                    photoUrl: meta.photoUrl || null,
+                    verified: true,
+                    isCurrentUser: true,
+                })
+            }
         }
     }
 

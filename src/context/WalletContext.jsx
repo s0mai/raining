@@ -4,7 +4,7 @@ import UserContext from './UserContext'
 
 const WalletContext = createContext(null)
 
-const INITIAL_BALANCES = { btc: 0, eth: 0, ton: 0, ltc: 0, sol: 0, usdt: 0 }
+const INITIAL_BALANCES = { btc: 0, eth: 0, ton: 0, ltc: 0, sol: 0, usdt: 0, stars: 0 }
 const STORAGE_KEY = 'stake_wallet_balances'
 const ACTIVE_CURRENCY_KEY = 'stake_active_currency'
 const DEPOSITS_KEY = 'stake_total_deposits'
@@ -13,13 +13,23 @@ const LANG_KEY = 'stake_language'
 
 const FIATS = [
     { code: 'USD', symbol: '$', label: 'US Dollar', rate: 1 },
-    { code: 'EUR', symbol: '€', label: 'Euro', rate: 0.92 },
-    { code: 'GBP', symbol: '£', label: 'British Pound', rate: 0.79 },
-    { code: 'JPY', symbol: '¥', label: 'Japanese Yen', rate: 149.5 },
-    { code: 'CAD', symbol: 'C$', label: 'Canadian Dollar', rate: 1.37 },
-    { code: 'AUD', symbol: 'A$', label: 'Australian Dollar', rate: 1.54 },
-    { code: 'BRL', symbol: 'R$', label: 'Brazilian Real', rate: 5.24 },
-    { code: 'INR', symbol: '₹', label: 'Indian Rupee', rate: 83.5 },
+    { code: 'EUR', symbol: '€', label: 'Euro', rate: 1 },
+    { code: 'GBP', symbol: '£', label: 'British Pound', rate: 0.8 },
+    { code: 'JPY', symbol: '¥', label: 'Japanese Yen', rate: 150 },
+    { code: 'CAD', symbol: 'C$', label: 'Canadian Dollar', rate: 1.4 },
+    { code: 'AUD', symbol: 'A$', label: 'Australian Dollar', rate: 1.6 },
+    { code: 'BRL', symbol: 'R$', label: 'Brazilian Real', rate: 5.3 },
+    { code: 'RUB', symbol: '₽', label: 'Russian Ruble', rate: 90 },
+    { code: 'INR', symbol: '₹', label: 'Indian Rupee', rate: 85 },
+    { code: 'IDR', symbol: 'Rp', label: 'Indonesian Rupiah', rate: 16000 },
+    { code: 'UZS', symbol: "so'm", label: "Uzbekistani So'm", rate: 13000 },
+    { code: 'UAH', symbol: '₴', label: 'Ukrainian Hryvnia', rate: 40 },
+    { code: 'PHP', symbol: '₱', label: 'Philippine Peso', rate: 60 },
+    { code: 'PKR', symbol: '₨', label: 'Pakistani Rupee', rate: 300 },
+    { code: 'IRR', symbol: '﷼', label: 'Iranian Rial', rate: 42000 },
+    { code: 'AFN', symbol: '؋', label: 'Afghan Afghani', rate: 72 },
+    { code: 'KZT', symbol: '₸', label: 'Kazakhstani Tenge', rate: 450 },
+    { code: 'TRY', symbol: '₺', label: 'Turkish Lira', rate: 30 },
 ]
 
 const COUNTRY_LANG = {
@@ -53,7 +63,16 @@ const COUNTRY_FIAT = {
     AU: 'AUD',
     BR: 'BRL',
     IN: 'INR',
-    RU: 'EUR', UA: 'EUR', TR: 'EUR',
+    RU: 'RUB',
+    UA: 'UAH',
+    TR: 'TRY',
+    ID: 'IDR',
+    UZ: 'UZS',
+    PH: 'PHP',
+    PK: 'PKR',
+    IR: 'IRR',
+    AF: 'AFN',
+    KZ: 'KZT',
 }
 
 function getDefaultsFromCountry(countryCode) {
@@ -110,6 +129,7 @@ export function WalletProvider({ children }) {
     const [totalDeposits, setTotalDeposits] = useState(getStoredDeposits)
     const [pollingEnabled, setPollingEnabled] = useState(false)
     const pollingRef = useRef(null)
+    const [isLuckBoosted, setIsLuckBoosted] = useState(false)
 
     useEffect(() => {
         const hasLang = (() => { try { return !!localStorage.getItem(LANG_KEY) } catch { return false } })()
@@ -136,12 +156,59 @@ export function WalletProvider({ children }) {
             .finally(() => clearTimeout(timeout))
     }, [])
 
+    const [liveRates, setLiveRates] = useState(null)
+
+    useEffect(() => {
+        fetch(`${API_BASE}/api/fiat-rates`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.rates) {
+                    setLiveRates(data.rates)
+                    setActiveFiatState(prev => {
+                        const newRate = data.rates[prev.code]
+                        if (newRate && newRate !== prev.rate) {
+                            return { ...prev, rate: newRate }
+                        }
+                        return prev
+                    })
+                }
+            })
+            .catch(() => {})
+    }, [])
+
     const balance = balances[activeCurrency] || 0
 
     const userCtx = useContext(UserContext)
     const userId = userCtx?.userId || 'dev_user'
     const displayName = userCtx?.displayName || 'Player'
     const photoUrl = userCtx?.photoUrl || null
+    const initData = userCtx?.initData || ''
+
+    // Fetch luck boost status from server on mount
+    useEffect(() => {
+        if (!userId || userId === 'dev_user') return
+        fetch(`${API_BASE}/api/bonus?userId=${userId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.hasUsedPromo || data.hasUsedBonus) setIsLuckBoosted(true)
+            })
+            .catch(() => {})
+    }, [userId])
+
+    // Register referral on first load if start_param is present
+    useEffect(() => {
+        if (!userId || userId === 'dev_user') return
+        const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param
+        if (!startParam || !startParam.startsWith('REF')) return
+        const referrerId = startParam.slice(3)
+        if (referrerId && referrerId !== userId) {
+            fetch(`${API_BASE}/api/balance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, referrerId, initData }),
+            }).catch(() => {})
+        }
+    }, [userId])
 
     const setBalances = useCallback((newBalances) => {
         setBalancesState(newBalances)
@@ -173,10 +240,10 @@ export function WalletProvider({ children }) {
             await fetch(`${API_BASE}/api/balance/update`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, coin, action, amount }),
+                body: JSON.stringify({ userId, coin, action, amount, initData }),
             })
-        } catch (e) { /* silently fail */ }
-    }, [userId])
+        } catch (e) { console.error('syncToServer failed', e) }
+    }, [userId, initData])
 
     // Pull server balance on mount
     useEffect(() => {
@@ -189,11 +256,21 @@ export function WalletProvider({ children }) {
 
     const showToast = useCallback((type, title, description, duration = 3000) => {
         const id = ++toastIdRef.current
-        setToasts(prev => [...prev, { id, type, title, description }].slice(-2))
+        setToasts(prev => {
+            const filtered = prev.filter(t => t.title !== title)
+            return [...filtered, { id, type, title, description }].slice(-1)
+        })
         setTimeout(() => {
             setToasts(prev => prev.filter(t => t.id !== id))
         }, duration)
     }, [])
+
+    // Winstreak tracking (shared across games)
+    const winstreakRef = useRef(0)
+
+    const incrementWinstreak = useCallback(() => { winstreakRef.current += 1 }, [])
+    const resetWinstreak = useCallback(() => { winstreakRef.current = 0 }, [])
+    const isForceLoss = useCallback(() => winstreakRef.current >= 5, [])
 
     const setActiveCurrency = useCallback((currency) => {
         setActiveCurrencyState(currency)
@@ -202,9 +279,10 @@ export function WalletProvider({ children }) {
 
     const setActiveFiat = useCallback((code) => {
         const f = FIATS.find(f => f.code === code) || FIATS[0]
-        setActiveFiatState(f)
+        const liveRate = liveRates?.[code]
+        setActiveFiatState(liveRate ? { ...f, rate: liveRate } : f)
         try { localStorage.setItem(FIAT_KEY, code) } catch (e) { /* ignore */ }
-    }, [])
+    }, [liveRates])
 
     const setActiveLang = useCallback((code) => {
         setActiveLangState(code)
@@ -232,7 +310,7 @@ export function WalletProvider({ children }) {
 
     // Update balance and persist to localStorage
     const updateBalance = useCallback((newBalance) => {
-        const rounded = parseFloat(newBalance.toFixed(2))
+        const rounded = parseFloat(newBalance.toFixed(8))
         setBalances(prev => {
             const next = { ...prev, [activeCurrency]: rounded }
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch (e) { /* ignore */ }
@@ -273,7 +351,7 @@ export function WalletProvider({ children }) {
         setBalancesState(prev => {
             const currentCoinBal = prev[activeCurrency] || 0
             if (amt > currentCoinBal) return prev
-            const newCoinBal = parseFloat((currentCoinBal - amt).toFixed(2))
+            const newCoinBal = parseFloat((currentCoinBal - amt).toFixed(8))
             const next = { ...prev, [activeCurrency]: newCoinBal }
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch (e) { /* ignore */ }
 
@@ -300,7 +378,7 @@ export function WalletProvider({ children }) {
 
         setBalancesState(prev => {
             const currentCoinBal = prev[activeCurrency] || 0
-            const newCoinBal = parseFloat((currentCoinBal + amt).toFixed(2))
+            const newCoinBal = parseFloat((currentCoinBal + amt).toFixed(8))
             const next = { ...prev, [activeCurrency]: newCoinBal }
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch (e) { /* ignore */ }
 
@@ -328,7 +406,7 @@ export function WalletProvider({ children }) {
 
         setBalancesState(prev => {
             const currentCoinBal = prev[coin] || 0
-            const newCoinBal = parseFloat((currentCoinBal + amt).toFixed(2))
+            const newCoinBal = parseFloat((currentCoinBal + amt).toFixed(8))
             const next = { ...prev, [coin]: newCoinBal }
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch (e) { /* ignore */ }
 
@@ -344,9 +422,12 @@ export function WalletProvider({ children }) {
             return next
         })
 
+        if (isBonus) {
+            setIsLuckBoosted(true)
+        }
         if (!isBonus) {
             setTotalDeposits(prev => {
-                const newTotal = parseFloat((prev + amt).toFixed(2))
+                const newTotal = parseFloat((prev + amt).toFixed(8))
                 try { localStorage.setItem(DEPOSITS_KEY, newTotal.toString()) } catch (e) { /* ignore */ }
                 return newTotal
             })
@@ -357,15 +438,15 @@ export function WalletProvider({ children }) {
             fetch(`${API_BASE}/api/balance/update`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, coin, action: 'win', amount: amt, isDeposit: true }),
+                body: JSON.stringify({ userId, coin, action: 'win', amount: amt, isDeposit: true, initData }),
             }).catch(() => {})
         }
         fetch(`${API_BASE}/api/leaderboard/sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, displayName, photoUrl, depositAmount: isBonus ? amt : 0 }),
+            body: JSON.stringify({ userId, displayName, photoUrl, depositAmount: isBonus ? 0 : amt, initData }),
         }).catch(() => {})
-    }, [activeCurrency, userId, displayName, photoUrl])
+    }, [activeCurrency, userId, displayName, photoUrl, initData])
 
     const addTransaction = useCallback((type, amount, currency) => {
         setTransactions(txs => [{
@@ -390,12 +471,15 @@ export function WalletProvider({ children }) {
         }])
     }, [setBalances])
 
+    const setLuckBoosted = useCallback(() => setIsLuckBoosted(true), [])
+
     const totalBalance = Object.values(balances).reduce((sum, v) => sum + v, 0)
 
     const value = {
         balance,
         balances,
         totalBalance,
+        fiatBalance: totalBalance,
         activeCurrency,
         setActiveCurrency,
         currency: activeCurrency,
@@ -418,6 +502,11 @@ export function WalletProvider({ children }) {
         enablePolling,
         toasts,
         showToast,
+        incrementWinstreak,
+        resetWinstreak,
+        isForceLoss,
+        isLuckBoosted,
+        setLuckBoosted,
     }
 
     return (

@@ -17,14 +17,14 @@ function randomScore(base, variance = 0.3) {
 const NAMES = [
     'Riot', 'Fell', 'SignLTC', 'Cryptoking', 'Luna',
     'Staker99', 'Bitwhale', 'Ethmaxi', 'Plinkopro', 'Dicedegen',
-    'Apple', 'Banana', 'Cat', 'Dog', 'Elephant',
-    'Forest', 'Garden', 'House', 'Island', 'Jungle',
-    'Kitchen', 'Lemon', 'Mountain', 'Ocean', 'Piano',
-    'Queen', 'River', 'Sunset', 'Tiger', 'Umbrella',
-    'Valley', 'Window', 'Yacht', 'Zero', 'Acorn',
-    'Bridge', 'Cloud', 'Diamond', 'Eagle', 'Flower',
-    'Guitar', 'Harbor', 'Icicle', 'Jigsaw', 'Kettle',
-    'Lantern', 'Meadow', 'Noodle', 'Orange', 'Puzzle',
+    'x_x', 'x', '/', '+', 'a',
+    'b', 'c', 'd', 'e', 'f',
+    'g', 'h', 'i', 'j', 'k',
+    'l', 'm', 'n', 'o', 'p',
+    'q', 'r', 's', 't', 'u',
+    'v', 'w', 'x_y', 'y', 'z',
+    'apple', 'bridge', 'cloud', 'diamond', 'eagle',
+    'flower', 'garden', 'harbor', 'island', 'jungle',
 ]
 
 const PFPS = [

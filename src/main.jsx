@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer'
+window.Buffer = Buffer
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
@@ -101,7 +103,7 @@ document.getElementById('loadingScreen')?.classList.add('hidden')
 ReactDOM.createRoot(document.getElementById('root')).render(
   <TopLevelErrorBoundary>
   <React.StrictMode>
-    <TonConnectUIProvider manifestUrl={import.meta.env.VITE_MANIFEST_URL || 'https://raining-one.vercel.app/tonconnect-manifest.json'}>
+    <TonConnectUIProvider manifestUrl={import.meta.env.VITE_MANIFEST_URL || 'https://rainbets.vercel.app/tonconnect-manifest.json'}>
       <TelegramThemeProvider>
         <ConfigProvider theme={stakeTheme}>
           <BrowserRouter>

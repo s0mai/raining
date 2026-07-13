@@ -3,17 +3,13 @@ import { useState } from 'react';
 import { useWallet } from '../../context/WalletContext';
 import CryptoImg from '../CryptoImg';
 import { cryptos } from '../../data/cryptos';
+import FormattedBalance from '../FormattedBalance';
 import './Balance.css';
 
 function Balance({ balance, onAddMoney }) {
-    const { activeCurrency, t } = useWallet();
+    const { activeCurrency, activeFiat, t } = useWallet();
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0];
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-
-    const balanceFormatted = balance.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
 
     const addMoneyAmounts = [100, 500, 1000];
 
@@ -21,7 +17,7 @@ function Balance({ balance, onAddMoney }) {
         <div className="balance-container">
             <div className="balance-display">
                 <span className="balance-symbol"><CryptoImg crypto={selectedCrypto} size={14} /></span>
-                <span className="balance-value">$ {balanceFormatted}</span>
+                <FormattedBalance value={balance} symbol={activeFiat.symbol} className="balance-value" />
             </div>
             <div className="balance-popover-wrapper">
                 <button
@@ -43,7 +39,7 @@ function Balance({ balance, onAddMoney }) {
                                         setIsPopoverOpen(false);
                                     }}
                                 >
-                                    +<CryptoImg crypto={selectedCrypto} size={12} /> ${amount}
+                                    +<CryptoImg crypto={selectedCrypto} size={12} /> {activeFiat.symbol}{amount}
                                 </button>
                             ))}
                         </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import CryptoImg from './CryptoImg'
+import { useWallet } from '../context/WalletContext'
 
 export default function BetInput({
   value,
@@ -16,6 +17,8 @@ export default function BetInput({
 }) {
   const [focused, setFocused] = useState(false)
   const [localValue, setLocalValue] = useState(() => value !== undefined ? String(value) : '')
+  const { activeFiat } = useWallet()
+  const fiatSymbol = activeFiat?.symbol || '$'
 
   useEffect(() => {
     if (value !== undefined) setLocalValue(String(value))
@@ -37,7 +40,7 @@ export default function BetInput({
   const prefixLeft = 12
   const circleSize = 20
   const gap = 6
-  const dollarWidth = 10
+  const dollarWidth = Math.max(12, fiatSymbol.length * 9)
   const padRight = 12
   const prefixWidth = crypto
     ? prefixLeft + circleSize + gap + dollarWidth + 6
@@ -96,12 +99,13 @@ export default function BetInput({
             lineHeight: 1,
           }}
         >
-          $
+          {fiatSymbol}
         </span>
       </div>
       <input
         id={id}
         type="text"
+        inputMode="decimal"
         value={displayValue}
         onChange={handleChange}
         onFocus={() => setFocused(true)}

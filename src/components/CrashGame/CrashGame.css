@@ -6,6 +6,7 @@
     height: 100%;
     overflow-y: auto;
     background: var(--bg-primary);
+    font-family: 'ProximaNovaRegular', var(--font-family);
 }
 
 .crash-game .game-container {

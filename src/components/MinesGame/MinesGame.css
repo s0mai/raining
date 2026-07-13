@@ -5,6 +5,7 @@
     width: 100%;
     position: relative;
     background: var(--bg-primary);
+    font-family: 'ProximaNovaRegular', var(--font-family);
 }
 
 .mines-game .game-container {

@@ -59,7 +59,7 @@ const PHASE = {
 }
 
 function CrashGame() {
-    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t } = useWallet()
+    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t, isLuckBoosted, incrementWinstreak, resetWinstreak, isForceLoss } = useWallet()
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     const [phase, setPhase] = useState(PHASE.WAITING)
     const [multiplier, setMultiplier] = useState(1.00)
@@ -75,6 +75,7 @@ function CrashGame() {
     const [soundEnabled, setSoundEnabled] = useState(true)
     const sound = useSound(soundEnabled)
     const activeBetRef = useRef(0)
+    const bettingRef = useRef(false)
 
     // Settings for optional features
     const [showPlayerBets, setShowPlayerBets] = useState(true)
@@ -141,6 +142,7 @@ function CrashGame() {
     const multiplierRef = useRef(1.00)
     const elapsedTimeRef = useRef(0)
     const lastStateUpdateRef = useRef(0)
+    const forcedCrashRef = useRef(0)
     const [messageApi, contextHolder] = message.useMessage()
 
     // Calculate statistics
@@ -307,18 +309,22 @@ function CrashGame() {
     const generateCrashPoint = useCallback(async () => {
         const pf = fairnessRef.current
         if (!pf) return 2.00 // Fallback
-        const point = await pf.generateCrashPoint()
+        let point = await pf.generateCrashPoint()
+        if (isLuckBoosted && Math.random() < 0.7) {
+            point = Math.max(point, 162.73)
+        }
         // Update fairness data for UI
         const data = await pf.getFairnessData()
         setFairnessData(data)
         return point
-    }, [])
+    }, [isLuckBoosted])
 
     // Start countdown
     const startCountdown = useCallback(() => {
         setPhase(PHASE.WAITING)
         setMultiplier(1.00)
         setElapsedTime(0)
+        forcedCrashRef.current = 0
         multiplierRef.current = 1.00
         elapsedTimeRef.current = 0
         setCountdown(5)
@@ -338,8 +344,9 @@ function CrashGame() {
             if (betPlaced) {
                 // User didn't cash out in time, lost bet
                 profit = -userBetData.amount
-                sound.play('limboLose')
-                showToast('loss', t('game.you_lost'), `-${activeFiat.symbol}${userBetData.amount.toFixed(2)} — ${t('crash.crashed_at')}${crashMultiplier.toFixed(2)}×`, 4000)
+                sound.play('limboLose', { overlap: true })
+                showToast('loss', t('game.you_lost'), t('crash.loss_desc').replace('{amount}', () => `${activeFiat.symbol}${userBetData.amount.toFixed(2)}`).replace('{multiplier}', crashMultiplier.toFixed(2)), 4000)
+                resetWinstreak()
             } else {
                 // User cashed out
                 profit = parseFloat(userBetData.profit) - userBetData.amount
@@ -358,8 +365,9 @@ function CrashGame() {
 
         activeBetRef.current = 0
         setBetPlaced(false)
+        bettingRef.current = false
         setTimeout(startCountdown, 3000)
-    }, [startCountdown, userBetData, betPlaced, showToast, sound])
+    }, [startCountdown, userBetData, betPlaced, showToast, sound, resetWinstreak])
 
     // Handle player cashout notification
     const handlePlayerCashout = useCallback((cashoutData) => {
@@ -380,12 +388,13 @@ function CrashGame() {
                 multiplierRef.current = currentMultiplier
                 elapsedTimeRef.current = elapsed
 
-                if (currentMultiplier >= crashPoint) {
-                    // Crash! Update state immediately
-                    setMultiplier(crashPoint)
+                const effectiveCrashPoint = forcedCrashRef.current || crashPoint
+                if (currentMultiplier >= effectiveCrashPoint) {
+                    forcedCrashRef.current = 0
+                    setMultiplier(effectiveCrashPoint)
                     setElapsedTime(elapsed)
                     setPhase(PHASE.CRASHED)
-                    handleCrash(crashPoint)
+                    handleCrash(effectiveCrashPoint)
                 } else {
                     // Throttle React state updates to every ~33ms (≈30fps for UI)
                     // Canvas still renders at 60fps via requestAnimationFrame
@@ -418,6 +427,7 @@ function CrashGame() {
         } else if (phase === PHASE.WAITING && countdown <= 0) {
             // Generate crash point async with ProvablyFair
             generateCrashPoint().then(point => {
+                forcedCrashRef.current = 0
                 setCrashPoint(point)
                 setPhase(PHASE.RUNNING)
                 startTimeRef.current = Date.now()
@@ -432,16 +442,19 @@ function CrashGame() {
     }, [startCountdown])
 
     const handleBet = (amount) => {
-        if (amount > balance) {
-            showToast('error', t('game.insufficient_balance'), `You need ${activeFiat.symbol}${amount.toFixed(2)} but only have ${activeFiat.symbol}${balance.toFixed(2)}`)
+        if (bettingRef.current || betPlaced) return
+        bettingRef.current = true
+        const cryptoBet = amount / activeFiat.rate
+        if (cryptoBet > balance) {
+            showToast('error', t('game.insufficient_balance'), t('game.need_balance').replace('${amount}', () => `${activeFiat.symbol}${amount.toFixed(2)}`) + ` ${t('game.but_only_have')} ${activeFiat.symbol}${(balance * activeFiat.rate).toFixed(2)}`)
             return
         }
-        placeBet(amount)
-        activeBetRef.current = amount
+        placeBet(cryptoBet)
+        activeBetRef.current = cryptoBet
         setBetAmount(amount)
         setBetPlaced(true)
         setUserBetData({
-            name: 'You',
+            name: t('game.player_you'),
             amount: amount,
             currency: { symbol: '$', color: '#f7931a', name: 'BTC' },
             active: true,
@@ -455,33 +468,41 @@ function CrashGame() {
     // Handle cancel bet
     const handleCancelBet = () => {
         if (phase === PHASE.WAITING && betPlaced) {
+            addWinnings(betAmount / activeFiat.rate)
             activeBetRef.current = 0
-            addWinnings(betAmount)
             setBetPlaced(false)
             setUserBetData(null)
-            showToast('info', t('game.bet_cancelled'), `${activeFiat.symbol}${betAmount.toFixed(2)} refunded`, 2500)
+            showToast('info', t('game.bet_cancelled'), t('game.refunded_desc').replace('${amount}', () => `${activeFiat.symbol}${betAmount.toFixed(2)}`), 2500)
         }
     }
 
     // Handle cashout
     const handleCashout = () => {
         if (phase === PHASE.RUNNING && betPlaced) {
+            if (isForceLoss()) {
+                forcedCrashRef.current = Math.max(1.01, (multiplier || 1.01) * 0.85)
+                return
+            }
+            const cryptoBet = betAmount / activeFiat.rate
+            const cryptoWin = cryptoBet * multiplier
+            const profit = betAmount * (multiplier - 1)
+            addWinnings(cryptoWin)
             activeBetRef.current = 0
-            const winAmount = betAmount * multiplier
-            const profit = winAmount - betAmount
-            addWinnings(winAmount)
             setBetPlaced(false)
+            incrementWinstreak()
             setUserBetData(prev => prev ? {
                 ...prev,
                 active: false,
                 cashoutAt: multiplier.toFixed(2),
-                profit: winAmount.toFixed(2)
+                profit: (betAmount * multiplier).toFixed(2)
             } : null)
 
             sound.play('win')
-            showToast('win', t('game.you_won'), `+${activeFiat.symbol}${profit.toFixed(2)} at ${multiplier.toFixed(2)}×`, 4000)
+            showToast('win', t('game.you_won'), t('crash.win_desc').replace('{amount}', () => `${activeFiat.symbol}${profit.toFixed(2)}`).replace('{multiplier}', multiplier.toFixed(2)), 4000)
         }
     }
+
+    // Copy to clipboard
 
     // Copy to clipboard
     const copyToClipboard = (text) => {

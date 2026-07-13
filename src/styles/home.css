@@ -200,9 +200,7 @@
     transform: scale(1);
 }
 
-.play-btn svg {
-    margin-left: 4px;
-}
+
 
 .stake-card-footer {
     display: flex;

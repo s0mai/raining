@@ -7,7 +7,6 @@ import {
     SafetyCertificateOutlined,
     SoundOutlined,
     FullscreenExitOutlined,
-    BugOutlined,
     CheckCircleOutlined,
 } from '@ant-design/icons'
 import { useWallet } from '../context/WalletContext'
@@ -23,8 +22,6 @@ function GameControls({
     onSettingsClick,
     onStatsClick,
     fairnessContent,
-    debugMode,
-    onDebugModeChange,
     soundEnabled: soundEnabledProp,
     onSoundChange,
     fairnessOpen,
@@ -34,12 +31,10 @@ function GameControls({
 }) {
     const [isFullscreen, setIsFullscreen] = useState(false)
     const [localSoundEnabled, setLocalSoundEnabled] = useState(true)
-    const [localDebugMode, setLocalDebugMode] = useState(false)
     const [localFairnessOpen, setLocalFairnessOpen] = useState(false)
     const [clientSeed, setClientSeed] = useState(FAKE_SEED)
 
     const soundEnabled = soundEnabledProp !== undefined ? soundEnabledProp : localSoundEnabled
-    const isDebugMode = debugMode !== undefined ? debugMode : localDebugMode
     const fairnessModalOpen = fairnessOpen !== undefined ? fairnessOpen : localFairnessOpen
     const { t } = useWallet()
 
@@ -47,12 +42,6 @@ function GameControls({
         const next = !soundEnabled
         if (onSoundChange) onSoundChange(next)
         else setLocalSoundEnabled(next)
-    }
-
-    const handleDebugToggle = () => {
-        const next = !isDebugMode
-        if (onDebugModeChange) onDebugModeChange(next)
-        else setLocalDebugMode(next)
     }
 
     const handleFairnessOpen = () => {
@@ -120,15 +109,6 @@ function GameControls({
                             icon={<SoundOutlined />}
                             className={`control-btn ${soundEnabled ? '' : 'muted'}`}
                             onClick={handleSoundToggle}
-                        />
-                    </Tooltip>
-                    <Tooltip title={isDebugMode ? t('controls.debug_disable') : t('controls.debug')}>
-                        <Button
-                            type="text"
-                            icon={<BugOutlined />}
-                            className={`control-btn ${isDebugMode ? 'active-debug' : ''}`}
-                            style={{ color: isDebugMode ? '#1475e1' : undefined }}
-                            onClick={handleDebugToggle}
                         />
                     </Tooltip>
                     {children}

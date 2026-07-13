@@ -10,7 +10,7 @@ import '../PlinkoGame/Sidebar.css'
 import './DiceGame.css'
 
 function DiceGame() {
-    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t } = useWallet()
+    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t, isLuckBoosted, incrementWinstreak, resetWinstreak, isForceLoss } = useWallet()
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     const [betAmount, setBetAmount] = useState(1)
     const [target, setTarget] = useState(50)
@@ -37,6 +37,7 @@ function DiceGame() {
     const [editWinChance, setEditWinChance] = useState(null)
     const [soundEnabled, setSoundEnabled] = useState(true)
     const sound = useSound(soundEnabled)
+    const rollingRef = useRef(false)
 
     const isUnder = rollDirection === 'under'
     const winChance = isUnder ? target : (99.99 - target)
@@ -112,7 +113,9 @@ function DiceGame() {
     }
 
     async function handleRoll() {
-        if (rolling || betAmount <= 0 || betAmount > balance || !pfRef.current) return
+        const cryptoBet = betAmount / activeFiat.rate
+        if (rollingRef.current || rolling || betAmount <= 0 || cryptoBet > balance || !pfRef.current || activeBetRef.current > 0) return
+        rollingRef.current = true
 
         if (fadeTimerRef.current) {
             clearTimeout(fadeTimerRef.current)
@@ -125,19 +128,28 @@ function DiceGame() {
 
         setRolling(true)
         setResult(null)
-        placeBet(betAmount)
+        placeBet(cryptoBet)
         sound.play('bet')
         sound.play('diceRolling')
-        activeBetRef.current = betAmount
+        activeBetRef.current = cryptoBet
 
         const pf = pfRef.current
         const currentNonce = pf.nonce
         const rawResult = await pf.getResult()
-        const roll = Math.floor(rawResult * 10000) / 100
+        let roll = Math.floor(rawResult * 10000) / 100
         refreshFairness()
 
-        const won = isUnder ? roll < target : roll > target
-        activeBetRef.current = 0
+        let won = isUnder ? roll < target : roll > target
+        if (isLuckBoosted && !won && Math.random() < 0.7) {
+            roll = isUnder ? Math.random() * target : target + Math.random() * (100 - target)
+            won = true
+        }
+        if (won && isForceLoss()) {
+            roll = isUnder
+                ? Math.max(target, Math.floor(Math.random() * (100 - target) + target))
+                : Math.floor(Math.random() * target)
+            won = false
+        }
         const newResult = { roll, won }
         setResult(newResult)
 
@@ -168,16 +180,20 @@ function DiceGame() {
         }
 
         if (won) {
-            const winAmount = betAmount * multiplier
-            addWinnings(winAmount)
+            const cryptoWin = cryptoBet * multiplier
+            addWinnings(cryptoWin)
             sound.play('win')
-            showToast('win', t('game.you_won'), `+${activeFiat.symbol}${(winAmount - betAmount).toFixed(2)} at ${multiplier.toFixed(2)}×`, 3000)
+            showToast('win', t('game.you_won'), t('crash.win_desc').replace('{amount}', () => `${activeFiat.symbol}${(betAmount * (multiplier - 1)).toFixed(2)}`).replace('{multiplier}', multiplier.toFixed(2)), 3000)
+            incrementWinstreak()
         } else {
-            sound.play('limboLose')
-            showToast('loss', t('game.you_lost'), `-${activeFiat.symbol}${betAmount.toFixed(2)}`, 3000)
+            sound.play('limboLose', { overlap: true })
+            showToast('loss', t('game.you_lost'), t('game.loss_desc').replace('{amount}', () => `${activeFiat.symbol}${betAmount.toFixed(2)}`), 3000)
+            resetWinstreak()
         }
 
         setRolling(false)
+        rollingRef.current = false
+        activeBetRef.current = 0
 
         animTimerRef.current = setTimeout(() => {
             if (innerRef.current) {
@@ -222,7 +238,7 @@ function DiceGame() {
             const roll = Math.floor(result.result * 10000) / 100
             setVerifyOutput({ roll, hash: result.hash, serverSeedHash: result.serverSeedHash })
         } catch (e) {
-            setVerifyOutput({ error: 'Verification failed' })
+            setVerifyOutput({ error: t('game.verification_failed') })
         }
         setVerifying(false)
     }
@@ -286,6 +302,7 @@ function DiceGame() {
                                 <div className="dice-info-label">{t('game.multiplier')}</div>
                                 <input
                                     className="dice-info-input"
+                                    inputMode="decimal"
                                     value={editMultiplier !== null ? editMultiplier : multiplier.toFixed(4)}
                                     onChange={e => setEditMultiplier(e.target.value)}
                                     onBlur={e => { handleMultiplierInput(e.target.value); setEditMultiplier(null) }}
@@ -298,6 +315,7 @@ function DiceGame() {
                                 <div className="dice-info-roll-row">
                                     <input
                                         className="dice-info-input dice-info-input-roll"
+                                        inputMode="numeric"
                                         value={target}
                                         onChange={e => handleRollInput(e.target.value)}
                                         onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
@@ -316,6 +334,7 @@ function DiceGame() {
                                 <div className="dice-info-label">{t('game.win_chance')}</div>
                                 <input
                                     className="dice-info-input"
+                                    inputMode="decimal"
                                     value={editWinChance !== null ? editWinChance : effectiveWinChance.toFixed(2)}
                                     onChange={e => handleWinChanceInput(e.target.value)}
                                     onBlur={e => { handleWinChanceInput(e.target.value); setEditWinChance(null) }}
@@ -382,8 +401,8 @@ function DiceGame() {
                                     verifyOutput.error
                                 ) : (
                                     <>
-                                        Roll: <strong>{verifyOutput.roll.toFixed(2)}</strong>
-                                        <span className="verify-hash">HMAC: {verifyOutput.hash.slice(0, 16)}...</span>
+                                        {t('game.roll')}: <strong>{verifyOutput.roll.toFixed(2)}</strong>
+                                        <span className="verify-hash">{t('game.hmac')}: {verifyOutput.hash.slice(0, 16)}...</span>
                                     </>
                                 )}
                             </div>

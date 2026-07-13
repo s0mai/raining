@@ -35,7 +35,7 @@ function Sidebar({
     currentStreak,
     maxStreak,
 }) {
-    const { activeCurrency, t } = useWallet();
+    const { activeCurrency, activeFiat, t } = useWallet();
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0];
     const [betMode, setBetMode] = useState('manual'); // 'manual' | 'auto'
     const [autoBetInput, setAutoBetInput] = useState(0);
@@ -152,7 +152,7 @@ function Sidebar({
             <div className="form-group">
                 <div className="form-header">
                     <label htmlFor="betAmount" className="form-label" style={{ margin: 0 }}>{t('game.bet_amount')}</label>
-                    <Text type="secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><CryptoImg crypto={selectedCrypto} size={14} /> ${(betAmount ?? 0).toFixed(2)}</Text>
+                    <Text type="secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><CryptoImg crypto={selectedCrypto} size={14} /> {activeFiat.symbol}{(betAmount ?? 0).toFixed(2)}</Text>
                 </div>
                 <div className="input-row">
                     <BetInput

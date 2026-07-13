@@ -1,4 +1,4 @@
-// Plinko Component - Integrated with main layout
+ // Plinko Component - Integrated with main layout
 import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import PlinkoEngine from './PlinkoEngine';
 import { getBinColors, BIN_PAYOUTS } from './constants';
@@ -97,40 +97,63 @@ function Plinko({
 }) {
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
+    const mountedRef = useRef(true);
     const [plinkoEngine, setPlinkoEngine] = useState(null);
     const [binsWidthPercentage, setBinsWidthPercentage] = useState(0.85);
     const [isLoading, setIsLoading] = useState(true);
+    const onBallEnterBinRef = useRef(onBallEnterBin)
+    const onBalanceChangeRef = useRef(onBalanceChange)
+    useEffect(() => { onBallEnterBinRef.current = onBallEnterBin })
+    useEffect(() => { onBalanceChangeRef.current = onBalanceChange })
 
     const { WIDTH, HEIGHT } = PlinkoEngine;
 
     // Initialize engine
     useEffect(() => {
+        mountedRef.current = true;
         if (!canvasRef.current) return;
 
-        const engine = new PlinkoEngine(canvasRef.current, {
-            rowCount,
-            riskLevel,
-            betAmount,
-            onBallEnterBin: (data) => {
-                onBallEnterBin?.(data);
-            },
-            onBalanceChange: (amount) => {
-                onBalanceChange?.(amount);
-            },
-        });
+        fetch('/plinkoOutcomes.json')
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then(outcomes => {
+                if (!mountedRef.current) return;
+                if (!canvasRef.current) return;
+                const engine = new PlinkoEngine(canvasRef.current, {
+                    rowCount,
+                    riskLevel,
+                    betAmount,
+                    outcomes,
+                    onBallEnterBin: (data) => {
+                        onBallEnterBinRef.current?.(data);
+                    },
+                    onBalanceChange: (amount) => {
+                        onBalanceChangeRef.current?.(amount);
+                    },
+                });
 
-        engine.start();
-        setPlinkoEngine(engine);
-        setBinsWidthPercentage(engine.binsWidthPercentage);
-        setIsLoading(false);
+                engine.start();
+                setPlinkoEngine(engine);
+                setBinsWidthPercentage(engine.binsWidthPercentage);
+                setIsLoading(false);
 
-        // Expose engine via ref
-        if (engineRef) {
-            engineRef.current = engine;
-        }
+                if (engineRef) {
+                    engineRef.current = engine;
+                }
+            })
+            .catch(() => {
+                if (!mountedRef.current) return;
+                setIsLoading(false);
+            });
 
         return () => {
-            engine.stop();
+            mountedRef.current = false;
+            if (engineRef.current) {
+                engineRef.current.stop();
+                engineRef.current = null;
+            }
         };
     }, []);
 

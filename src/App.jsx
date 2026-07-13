@@ -15,6 +15,9 @@ const MinesPage = lazy(() => import('./pages/MinesPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
 const DepositPage = lazy(() => import('./pages/DepositPage'))
+const WithdrawPage = lazy(() => import('./pages/WithdrawPage'))
+const BonusesPage = lazy(() => import('./pages/BonusesPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 function App() {
     const { activeLang } = useWallet()
@@ -35,6 +38,9 @@ function App() {
                     <Route path="leaderboard" element={<Suspense fallback={null}><LeaderboardPage /></Suspense>} />
                 </Route>
                 <Route path="/deposit" element={<Suspense fallback={null}><DepositPage /></Suspense>} />
+                <Route path="/withdraw" element={<Suspense fallback={null}><WithdrawPage /></Suspense>} />
+                <Route path="/bonuses" element={<Suspense fallback={null}><BonusesPage /></Suspense>} />
+                <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />
             </Routes>
             </ErrorBoundary>
         </AntApp>

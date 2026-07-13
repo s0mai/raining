@@ -23,11 +23,13 @@
     max-height: 85vh;
     overflow-y: auto;
     display: flex;
+    font-family: 'ProximaNovaRegular', var(--font-family);
     flex-direction: column;
     align-items: center;
     gap: 12px;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
     position: relative;
+    scrollbar-gutter: stable both-edges;
 }
 
 .profile-close {
@@ -224,6 +226,45 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+}
+
+/* === Collapsible Profile Card === */
+.profile-card.collapsible {
+    overflow: hidden;
+    overflow-anchor: none;
+}
+
+.profile-card-header-clickable {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    user-select: none;
+    padding: 12px 14px;
+    margin: -12px -14px 0;
+}
+
+.profile-card-body-wrap {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+    overflow-anchor: none;
+}
+
+.profile-card-body-wrap.expanded {
+    max-height: 600px;
+}
+
+.profile-card-body-wrap > div > .profile-card-body {
+    padding-top: 0;
+}
+
+.profile-card-body-wrap > div > .profile-card-body > *:first-child {
+    margin-top: 0;
 }
 
 /* === Profile Cards (Referral, Promo) === */

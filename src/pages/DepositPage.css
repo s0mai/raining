@@ -1,572 +1,72 @@
 .deposit-page {
-    height: 100%;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     background: var(--bg-primary);
     overflow-y: auto;
 }
 
-.deposit-header {
+.deposit-body {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 12px;
     padding: 16px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.deposit-back {
-    display: flex;
-    align-items: center;
-    color: var(--text-secondary);
-    text-decoration: none;
-}
-
-.deposit-back:hover {
-    color: var(--text-primary);
-}
-
-.deposit-header h1 {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
-    color: var(--text-primary);
-}
-
-.deposit-balance {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 24px 16px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.deposit-balance-label {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.deposit-balance-amount {
-    font-size: 32px;
-    font-weight: 800;
-    color: var(--text-primary);
-    font-family: 'Montserrat', sans-serif;
-}
-
-.deposit-crypto-list {
-    display: flex;
-    flex-direction: column;
-    padding: 8px;
-    gap: 4px;
-}
-
-.deposit-crypto-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 8px;
-    background: var(--bg-secondary);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.deposit-crypto-item:hover {
-    background: var(--bg-tertiary);
-}
-
-.crypto-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    overflow: hidden;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-.crypto-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.deposit-crypto-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 800;
-    color: #fff;
-    flex-shrink: 0;
-}
-
-.crypto-icon:not(img) {
-    font-size: 16px;
-    font-weight: 700;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-}
-
-.deposit-crypto-info {
     flex: 1;
+    padding-bottom: 70px;
+}
+
+/* === Horizontal Nav === */
+.deposit-nav-scroll {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.deposit-crypto-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.deposit-crypto-symbol {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-.deposit-crypto-balance {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    font-family: 'Montserrat', sans-serif;
-}
-
-/* === Modal Overlay === */
-.deposit-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.65);
-    z-index: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-}
-
-.deposit-modal {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    width: 100%;
-    max-width: 380px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
-    position: relative;
-    overflow-y: auto;
-    max-height: 90vh;
-}
-
-/* === Modal Header === */
-.deposit-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.deposit-modal-crypto {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.deposit-modal-crypto .deposit-crypto-icon {
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
-}
-
-.deposit-modal-close {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 18px;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 6px;
-    transition: all 0.15s;
-    line-height: 1;
-}
-
-.deposit-modal-close:hover {
-    color: var(--text-primary);
-    background: var(--bg-tertiary);
-}
-
-/* === Tabs === */
-.deposit-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.deposit-tab {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 12px;
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.deposit-tab:hover {
-    color: var(--text-secondary);
-    background: var(--bg-primary);
-}
-
-.deposit-tab.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-}
-
-/* === Tab Content === */
-.deposit-tab-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px 20px 20px;
-    gap: 16px;
-}
-
-/* === QR Code === */
-.deposit-qr-container {
-    width: 140px;
-    height: 140px;
-    border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px;
-}
-
-/* === Address Row === */
-.deposit-bonus-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 8px 14px;
-    background: rgba(20, 117, 225, 0.08);
-    border: 1px solid rgba(20, 117, 225, 0.25);
-    border-radius: 8px;
-}
-
-.deposit-bonus-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: #1475e1;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.deposit-bonus-value {
-    font-size: 14px;
-    font-weight: 800;
-    color: #1475e1;
-}
-
-.deposit-address-row {
-    display: flex;
-    align-items: center;
     gap: 8px;
-    width: 100%;
-}
-
-.deposit-address-input {
-    flex: 1;
+    padding: 8px 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 12px;
-    color: var(--text-primary);
-    font-family: 'Courier New', monospace;
-    outline: none;
-    user-select: all;
-    cursor: text;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    mask-image: linear-gradient(to right, transparent 0, black 12px, black calc(100% - 12px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 12px, black calc(100% - 12px), transparent 100%);
 }
 
-.deposit-copy-btn {
+.deposit-nav-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.dn-item {
     display: flex;
     align-items: center;
-    gap: 5px;
-    flex-shrink: 0;
-    padding: 10px 14px;
-    background: var(--bg-tertiary);
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
     border: none;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
+    background: var(--bg-secondary);
     color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.15s;
     white-space: nowrap;
-}
-
-.deposit-copy-btn:hover {
-    background: var(--accent-hover);
-    color: var(--text-primary);
-}
-
-.deposit-address-hint {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-align: center;
-    line-height: 1.5;
-    margin: 0;
-}
-
-.deposit-address-hint strong {
-    color: var(--text-secondary);
-}
-
-/* === Withdraw Balance Reference === */
-.withdraw-balance-ref {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    font-size: 13px;
-    color: var(--text-secondary);
-    padding: 10px 14px;
-    background: var(--bg-primary);
-    border-radius: 8px;
-}
-
-.withdraw-balance-amount {
-    font-weight: 700;
-    color: var(--text-primary);
-    font-family: 'Courier New', monospace;
-}
-
-/* === Withdraw Fields === */
-.withdraw-field {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.withdraw-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.withdraw-input {
-    width: 100%;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 13px;
-    color: var(--text-primary);
-    outline: none;
-    transition: border-color 0.15s;
-    box-sizing: border-box;
-}
-
-.withdraw-input:focus {
-    border-color: var(--accent);
-}
-
-.withdraw-input.error {
-    border-color: #e33535;
-}
-
-.withdraw-amount-row {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-}
-
-.withdraw-amount-row .withdraw-input {
-    flex: 1;
-}
-
-.withdraw-max-btn {
-    flex-shrink: 0;
-    padding: 10px 14px;
-    background: var(--bg-tertiary);
-    border: none;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--accent);
-    cursor: pointer;
     transition: all 0.15s;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    flex-shrink: 0;
 }
 
-.withdraw-max-btn:hover {
-    background: var(--accent-hover);
-    color: var(--accent);
+.dn-item:hover {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--bg-primary), black 10%);
 }
 
-.withdraw-error-msg {
-    font-size: 11px;
-    color: #e33535;
-    font-weight: 500;
+.dn-item.active {
+    background: var(--accent);
+    color: #fff;
 }
 
-/* === Confirm Button === */
-.withdraw-confirm-btn {
-    width: 100%;
-    padding: 16px;
-    background: #1475e1;
-    border: none;
-    border-radius: 8px;
-    color: #000;
-    font-size: 16px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transform: translateY(-6px);
-    box-shadow: 0 6px 0 #0d4f91, 0 6px 10px rgba(0, 0, 0, 0.3);
-    margin-top: 4px;
-    font-family: inherit;
+.dn-item svg {
+    flex-shrink: 0;
 }
 
-.withdraw-confirm-btn:hover {
-    background: #1a86f0;
-    transform: translateY(-4px);
-    box-shadow: 0 4px 0 #0d4f91, 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.withdraw-confirm-btn:active {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 0 #0d4f91, 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* === Deposit Box (card for form sections) === */
-.deposit-box {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-}
-
-/* === Deposit Action Button === */
-.deposit-action-btn {
-    width: 100%;
-    padding: 16px;
-    background: #1475e1;
-    border: none;
-    border-radius: 8px;
-    color: #000;
-    font-size: 16px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transform: translateY(-6px);
-    box-shadow: 0 6px 0 #0d4f91, 0 6px 10px rgba(0, 0, 0, 0.3);
-    margin-top: 4px;
-    font-family: inherit;
-}
-
-.deposit-action-btn:hover {
-    background: #1a86f0;
-    transform: translateY(-4px);
-    box-shadow: 0 4px 0 #0d4f91, 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.deposit-action-btn:active {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 0 #0d4f91, 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.deposit-action-btn:disabled {
-    background: #525252;
-    color: #888;
-    transform: translateY(0);
-    box-shadow: none;
-    cursor: not-allowed;
-}
-
-/* === Amount Field === */
-.deposit-amount-field {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-/* === Estimate Row === */
-.deposit-estimate-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 8px 14px;
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-}
-
-.deposit-estimate-value {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--accent);
-    font-family: 'Courier New', monospace;
-}
-
-/* === Rate Row === */
-.deposit-rate-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 6px 14px;
-    background: transparent;
-}
-
-/* === Error Message === */
+/* === Error === */
 .deposit-error-msg {
     font-size: 12px;
     color: #e33535;
@@ -575,36 +75,13 @@
     margin: 0;
 }
 
-/* === Info Row === */
-.deposit-info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 8px 14px;
-    background: var(--bg-primary);
-    border-radius: 8px;
-}
-
-.deposit-info-label {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-.deposit-info-value {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-primary);
-    font-family: 'Courier New', monospace;
-}
-
-/* === Confirming State === */
+/* === Confirming === */
 .deposit-confirming {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    padding: 24px 0;
+    padding: 16px 0;
     text-align: center;
 }
 
@@ -614,12 +91,6 @@
     margin: 0;
 }
 
-.deposit-confirming .deposit-address-hint {
-    font-size: 11px;
-    color: var(--text-muted);
-}
-
-/* === Spinner === */
 .deposit-spinner {
     width: 36px;
     height: 36px;
@@ -629,173 +100,231 @@
     animation: spin 0.8s linear infinite;
 }
 
-.deposit-iframe {
-    width: 100%;
-    height: 480px;
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    overflow: hidden;
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
-/* === Bonus Banner === */
-.deposit-bonus-banner {
-    position: relative;
-    overflow: hidden;
-    margin: 8px 12px;
-    padding: 14px 18px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    border: 1px solid rgba(20, 117, 225, 0.4);
-    cursor: pointer;
-}
-
-.deposit-bonus-banner-glow {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle at 30% 50%, rgba(20, 117, 225, 0.15) 0%, transparent 60%);
-    pointer-events: none;
-}
-
-.deposit-bonus-banner-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: relative;
-    z-index: 1;
-}
-
-.deposit-bonus-banner-left {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.deposit-bonus-banner-badge {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 800;
-    color: #fff;
-    background: linear-gradient(90deg, #1475e1, #0d5cb8);
-    padding: 2px 10px;
-    border-radius: 4px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    width: fit-content;
-}
-
-.deposit-bonus-banner-text {
-    font-size: 14px;
-    font-weight: 700;
-    color: #fff;
-}
-
-.deposit-bonus-banner-arrow {
-    font-size: 20px;
-    color: #1475e1;
-    font-weight: 700;
+/* === Crypto Icon === */
+.crypto-icon {
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
 }
 
 /* === Bonus Popup === */
 .deposit-bonus-popup-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: rgba(0, 0, 0, 0.7);
-    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
-    animation: fadeIn 0.3s ease;
+    z-index: 100;
+    padding: 20px;
 }
 
 .deposit-bonus-popup {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    border: 1px solid rgba(255, 215, 0, 0.3);
-    border-radius: 20px;
-    padding: 36px 28px 28px;
-    max-width: 340px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 32px 24px 24px;
+    max-width: 360px;
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
     text-align: center;
-    box-shadow: 0 0 60px rgba(255, 215, 0, 0.15);
-    animation: scaleIn 0.3s ease;
+    gap: 12px;
 }
 
 .deposit-bonus-popup-icon {
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
-    background: rgba(255, 215, 0, 0.12);
+    background: rgba(255, 215, 0, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 4px;
 }
 
 .deposit-bonus-popup-title {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 800;
-    color: #ffd700;
+    color: var(--text-primary);
     margin: 0;
 }
 
 .deposit-bonus-popup-msg {
     font-size: 14px;
     color: var(--text-secondary);
-    margin: 0;
     line-height: 1.5;
-}
-
-.deposit-bonus-popup-msg strong {
-    color: var(--text-primary);
+    margin: 0;
 }
 
 .deposit-bonus-popup-sub {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--color-positive);
+    font-size: 12px;
+    color: var(--text-muted);
     margin: 0;
 }
 
 .deposit-bonus-popup-btn {
-    margin-top: 8px;
-    padding: 14px 48px;
-    background: linear-gradient(90deg, #1475e1, #0f5cc0);
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
     border: none;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 15px;
+    border-radius: 8px;
+    color: #000;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.15s;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    transition: background 0.15s;
+    font-family: inherit;
+    margin-top: 4px;
 }
 
 .deposit-bonus-popup-btn:hover {
-    transform: scale(1.03);
-    box-shadow: 0 4px 20px rgba(20, 117, 225, 0.4);
+    background: var(--accent-hover);
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+/* === Deposits History === */
+.deposits-history {
+    margin-top: 24px;
 }
 
-@keyframes scaleIn {
-    from { transform: scale(0.9); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+.dh-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.dh-header-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-primary);
+    font-size: 25px;
+    font-weight: 700;
+    font-family: 'Proxima Nova Rg', sans-serif;
+    line-height: 30px;
+    letter-spacing: -0.75px;
+}
+
+.dh-header-left svg {
+    width: 30px;
+    height: auto;
+    color: var(--text-muted);
+}
+
+.dh-table {
+    background: var(--bg-secondary);
+    border-radius: 14px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.dh-table-header {
+    display: flex;
+    align-items: center;
+    height: 49px;
+    padding: 0 30px;
+    background: color-mix(in srgb, var(--bg-primary), black 10%);
+    font-size: 17px;
+    font-weight: 700;
+    font-family: 'Proxima Nova Rg', sans-serif;
+    color: var(--text-primary);
+    line-height: 21px;
+}
+
+.dh-col {
+    width: 100%;
+}
+
+.dh-col-mobile {
+    display: none;
+    width: 100%;
+}
+
+.dh-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 0;
+    width: 100%;
+}
+
+.dh-empty-title {
+    text-align: center;
+    font-size: 21px;
+    font-weight: 700;
+    font-family: 'Proxima Nova Rg', sans-serif;
+    color: var(--text-primary);
+    line-height: 26px;
+    letter-spacing: -0.63px;
+}
+
+.dh-empty-subtitle {
+    max-width: 358px;
+    color: var(--text-muted);
+    margin: 8px 0 16px;
+    font-size: 17px;
+    font-weight: 700;
+    font-family: 'Proxima Nova Rg', sans-serif;
+    line-height: 23.8px;
+    text-align: center;
+}
+
+.dh-empty-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 54px;
+    min-height: 54px;
+    padding: 0 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 700;
+    font-family: 'Proxima Nova Rg', sans-serif;
+    line-height: 21px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.dh-empty-btn:hover {
+    background: var(--accent-hover);
+}
+
+.dh-empty-btn svg {
+    width: 22px;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .dh-col {
+        display: none;
+    }
+
+    .dh-col-mobile {
+        display: block;
+    }
+
+    .dh-table-header {
+        padding: 0 16px;
+        font-size: 15px;
+    }
+
+    .dh-header-left {
+        font-size: 20px;
+        line-height: 25px;
+    }
+
+    .dh-header-left svg {
+        width: 24px;
+    }
+
 }

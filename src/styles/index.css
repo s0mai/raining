@@ -7,6 +7,13 @@
     font-style: normal;
 }
 
+@font-face {
+    font-family: 'ProximaNovaRgBold';
+    src: url('/font/ProximaNovaRgBold.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
 /* ===== CSS Variables - Exact Stake Colors ===== */
 :root {
     --bg-primary: #1a2c38;
@@ -32,7 +39,7 @@
 
     --border-color: #2f4553;
 
-    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family: 'ProximaNovaRgBold', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
     --radius-sm: 4px;
     --radius-md: 8px;
@@ -85,7 +92,7 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-    height: 60px;
+    height: 70px;
     background: var(--bg-secondary);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     position: relative;
@@ -214,12 +221,11 @@ body {
 .wallet-balance-display {
     display: flex;
     align-items: center;
-    gap: 6px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-right: none;
-    border-radius: 6px 0 0 6px;
-    padding: 8px 12px;
+    border-radius: 10px 0 0 10px;
+    padding: 8px 40px 8px 12px;
     height: 40px;
     cursor: default;
 }
@@ -250,12 +256,12 @@ body {
 }
 
 .wallet-balance-amount {
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 400;
     color: var(--text-primary);
     letter-spacing: 0.3px;
     min-width: 80px;
-    font-family: 'ProximaNova', 'Inter', sans-serif;
+    font-family: 'ProximaNovaRegular', var(--font-family);
 }
 
 .wallet-flag {
@@ -282,14 +288,18 @@ body {
     background: var(--accent-blue);
     color: #fff;
     border: none;
-    border-radius: 0 6px 6px 0;
-    padding: 8px 20px;
+    border-radius: 10px;
+    padding: 0;
+    width: 40px;
     height: 40px;
-    font-size: 14px;
-    font-weight: 700;
+    margin-left: -25px;
     cursor: pointer;
     transition: all 0.15s ease;
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
 }
 
 .wallet-btn:hover {
@@ -1688,14 +1698,16 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: 54px;
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-color);
     z-index: 1000;
     justify-content: space-around;
     align-items: center;
+    border-radius: 24px 24px 0 0;
     padding: 0 4px;
     padding-bottom: env(safe-area-inset-bottom, 0);
+    box-shadow: 0 -4px 20px 0px color-mix(in srgb, var(--accent), transparent 70%);
 }
 
 .bottom-nav-item {
@@ -1712,7 +1724,7 @@ body {
 }
 
 .bottom-nav-item.active {
-    color: var(--accent-green);
+    color: #fff;
 }
 
 .bottom-nav-item:hover {
@@ -1733,7 +1745,7 @@ body {
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
-    filter: brightness(0) invert(1);
+    filter: brightness(0) saturate(100%) invert(35%) sepia(98%) saturate(1352%) hue-rotate(190deg) brightness(97%) contrast(101%);
 }
 
 .bottom-nav-label {
@@ -1923,19 +1935,22 @@ body {
     }
 
     .wallet-balance-amount {
-        font-size: 12px;
+        font-size: 13px;
         min-width: 60px;
     }
 
     .wallet-balance-display {
         height: 34px;
-        padding: 6px 8px;
+        padding: 6px 32px 6px 8px;
+        border-right: none;
+        border-radius: 10px 0 0 10px;
     }
 
     .wallet-btn {
-        padding: 6px 12px;
-        font-size: 12px;
+        padding: 0;
+        width: 34px;
         height: 34px;
+        margin-left: -20px;
     }
 
     .mobile-menu-btn {
@@ -1993,6 +2008,7 @@ body {
 
     .bottom-nav-item {
         padding: 4px 8px;
+        border-radius: 8px;
         min-width: 48px;
     }
 

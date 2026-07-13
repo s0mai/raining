@@ -3,12 +3,13 @@ import { InputNumber, Button } from 'antd'
 import BetInput from '../BetInput'
 import { useWallet } from '../../context/WalletContext'
 import GameControls from '../GameControls'
+import ProvablyFair from '../../utils/ProvablyFair'
 import useSound from '../../hooks/useSound'
 import { cryptos } from '../../data/cryptos'
 import './LimboGame.css'
 
 function LimboGame() {
-    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t } = useWallet()
+    const { balance, placeBet, addWinnings, showToast, activeCurrency, activeFiat, t, isLuckBoosted, incrementWinstreak, resetWinstreak, isForceLoss } = useWallet()
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     const [betAmount, setBetAmount] = useState(1)
     const [target, setTarget] = useState(2)
@@ -21,9 +22,10 @@ function LimboGame() {
     const crashPointRef = useRef(0)
     const cashedOutRef = useRef(false)
     const activeBetRef = useRef(0)
-    const resultSoundPlayedRef = useRef(false)
+    const fairnessRef = useRef(null)
     const [soundEnabled, setSoundEnabled] = useState(true)
     const sound = useSound(soundEnabled)
+    const playingRef = useRef(false)
     const [betMode, setBetMode] = useState('manual')
     const [autoBetInput, setAutoBetInput] = useState(10)
     const [autoBetsLeft, setAutoBetsLeft] = useState(null)
@@ -33,25 +35,40 @@ function LimboGame() {
     betAmountRef.current = betAmount
     targetRef.current = target
 
-    const winChance = Math.max(0.01, Math.min(99.99, 96 / target))
+    const     winChance = Math.max(0.01, Math.min(99.99, 96 / target))
 
-    const startGame = useCallback(() => {
-        if (playing || betAmount <= 0 || betAmount > balance) return
+    useEffect(() => {
+        fairnessRef.current = new ProvablyFair()
+    }, [])
+
+    const startGame = useCallback(async () => {
+        const cryptoBet = betAmount / activeFiat.rate
+        if (playingRef.current || playing || betAmount <= 0 || cryptoBet > balance) return
+        playingRef.current = true
         if (intervalRef.current) clearInterval(intervalRef.current)
         if (autoBetIntervalRef.current) clearTimeout(autoBetIntervalRef.current)
-        placeBet(betAmount)
+        placeBet(cryptoBet)
         sound.play('bet')
         sound.play('limboTick', { loop: true })
-        activeBetRef.current = betAmount
+        activeBetRef.current = cryptoBet
         setPlaying(true)
         setCrashed(false)
         setCashedOut(false)
         cashedOutRef.current = false
-        resultSoundPlayedRef.current = false
         setMultiplier(1)
 
-        crashPointRef.current = Math.max(1, 0.96 / Math.random())
-        const canCashout = crashPointRef.current >= target
+        const pf = fairnessRef.current
+        let crashPoint = pf ? await pf.generateCrashPoint() : Math.max(1, 0.96 / Math.random())
+        let canCashout = crashPoint >= target
+        if (isLuckBoosted && !canCashout && Math.random() < 0.7) {
+            crashPoint = target * (1 + Math.random() * 0.5)
+            canCashout = true
+        }
+        if (canCashout && isForceLoss()) {
+            crashPoint = Math.max(1, (target || 1.01) * 0.95)
+            canCashout = false
+        }
+        crashPointRef.current = crashPoint
         const startTime = Date.now()
 
         intervalRef.current = setInterval(() => {
@@ -62,37 +79,38 @@ function LimboGame() {
             if (current >= target && !cashedOutRef.current && canCashout) {
                 cashedOutRef.current = true
                 setCashedOut(true)
+                const cryptoWin = cryptoBet * target
+                addWinnings(cryptoWin)
+                showToast('win', t('game.cashed_out'), t('crash.win_desc').replace('{amount}', () => `${activeFiat.symbol}${(betAmount * (target - 1)).toFixed(2)}`).replace('{multiplier}', target.toFixed(2)), 3000)
+                incrementWinstreak()
                 activeBetRef.current = 0
-                const winAmount = betAmount * target
-                addWinnings(winAmount)
-                showToast('win', t('game.cashed_out'), `+${activeFiat.symbol}${(winAmount - betAmount).toFixed(2)} at ${target.toFixed(2)}×`, 3000)
             }
 
-            if (current >= crashPointRef.current) {
+            if (current >= crashPointRef.current && !cashedOutRef.current) {
                 clearInterval(intervalRef.current)
                 intervalRef.current = null
                 setMultiplier(crashPointRef.current)
                 setCrashed(true)
                 setPlaying(false)
+                playingRef.current = false
                 activeBetRef.current = 0
-                showToast('loss', t('game.crashed'), `-${activeFiat.symbol}${betAmount.toFixed(2)}`, 3000)
+                resetWinstreak()
+                sound.stop('limboTick')
+                sound.play('limboLose', { overlap: true })
+                showToast('loss', t('game.you_lost'), t('game.loss_desc').replace('{amount}', () => `${activeFiat.symbol}${(cryptoBet * activeFiat.rate).toFixed(2)}`), 3000)
+            }
+
+            if (current >= crashPointRef.current && cashedOutRef.current) {
+                clearInterval(intervalRef.current)
+                intervalRef.current = null
+                setMultiplier(crashPointRef.current)
+                setPlaying(false)
+                playingRef.current = false
+                sound.stop('limboTick')
+                sound.play('win')
             }
         }, 30)
-    }, [playing, betAmount, balance, target, placeBet, sound, addWinnings, showToast, t])
-
-    useEffect(() => {
-        if (crashed || cashedOut) {
-            sound.stop('limboTick')
-        }
-        if (resultSoundPlayedRef.current) return
-        if (crashed && !cashedOut) {
-            resultSoundPlayedRef.current = true
-            sound.play('limboLose')
-        } else if (cashedOut) {
-            resultSoundPlayedRef.current = true
-            sound.play('win')
-        }
-    }, [crashed, cashedOut])
+    }, [playing, betAmount, balance, target, placeBet, sound, addWinnings, showToast, t, incrementWinstreak, resetWinstreak, isForceLoss, activeFiat])
 
     useEffect(() => {
         if (!crashed && !cashedOut) return
@@ -110,12 +128,11 @@ function LimboGame() {
         setTargetInput(target.toFixed(2))
     }, [target])
 
-    const soundRef = useRef(sound)
-    soundRef.current = sound
     useEffect(() => {
         return () => {
             clearInterval(intervalRef.current)
             clearTimeout(autoBetIntervalRef.current)
+            sound.stop('limboTick')
             if (activeBetRef.current > 0) {
                 addWinnings(activeBetRef.current)
                 activeBetRef.current = 0
@@ -220,7 +237,7 @@ function LimboGame() {
                                     startGame()
                                 }}
                                 className="bet-button"
-                                disabled={autoBetInput <= 0 || betAmount <= 0 || betAmount > balance}
+                                disabled={autoBetInput <= 0 || betAmount <= 0 || (betAmount / activeFiat.rate) > balance}
                             >
                                 {t('limbo.start_auto')}
                             </button>
@@ -229,7 +246,7 @@ function LimboGame() {
                                 {t('game.rolling')}
                             </button>
                         ) : (
-                            <button onClick={startGame} className="bet-button" disabled={betAmount <= 0 || betAmount > balance}>
+                            <button onClick={startGame} className="bet-button" disabled={betAmount <= 0 || (betAmount / activeFiat.rate) > balance}>
                                 {t('game.bet')}
                             </button>
                         )}
@@ -241,6 +258,7 @@ function LimboGame() {
                             <div className="input-with-suffix">
                                 <input
                                     type="number"
+                                    inputMode="decimal"
                                     value={targetInput}
                                     onChange={e => {
                                         const raw = e.target.value

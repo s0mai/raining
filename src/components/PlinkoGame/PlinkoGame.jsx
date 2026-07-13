@@ -28,7 +28,6 @@ import {
     FireOutlined,
     StarOutlined,
     RightOutlined,
-    BugOutlined,
     CloseOutlined,
     ReloadOutlined,
     LineChartOutlined
@@ -112,7 +111,7 @@ const BALL_TYPES = {
 
 function PlinkoGame() {
     // Shared Wallet
-    const { balance, placeBet, addWinnings, activeCurrency, activeFiat, t } = useWallet()
+    const { balance, placeBet, addWinnings, activeCurrency, activeFiat, t, isLuckBoosted } = useWallet()
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     // State
     const [betAmount, setBetAmount] = useState(1);
@@ -132,33 +131,24 @@ function PlinkoGame() {
 
     // UI States
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const activeBetRef = useRef(0);
+    const inFlightBetsRef = useRef(0);
+    const inFlightCountRef = useRef(0);
     const [statsDrawerOpen, setStatsDrawerOpen] = useState(false);
     const [fairnessModalOpen, setFairnessModalOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
-
-    // Debug State
-    const [isDebugMode, setIsDebugMode] = useState(false);
-    const [debugData, setDebugData] = useState(null);
 
     const engineRef = useRef(null);
     const gameDisplayRef = useRef(null);
     const chartCanvasRef = useRef(null);
     const chartInstanceRef = useRef(null);
     const dragHandlersRef = useRef({ move: null, up: null });
-    const debugDragHandlersRef = useRef({ move: null, up: null });
 
     // Drag refs (Live Stats)
     const widgetRef = useRef(null);
     const isDragging = useRef(false);
     const dragOffset = useRef({ x: 0, y: 0 });
     const profitHistoryRef = useRef([0]);
-
-    // Drag refs (Debug Widget)
-    const debugWidgetRef = useRef(null);
-    const isDebugDragging = useRef(false);
-    const debugDragOffset = useRef({ x: 0, y: 0 });
 
     // Chart.js State
     const [hoveredProfitValue, setHoveredProfitValue] = useState(null);
@@ -211,8 +201,18 @@ function PlinkoGame() {
         const ballType = data.ballType || selectedBallType;
         const actualBall = BALL_TYPES[ballType] || BALL_TYPES.normal;
 
+        let payouts = data.payout;
+        if (isLuckBoosted && payouts.multiplier < 1 && Math.random() < 0.7) {
+            const rowPayments = BIN_PAYOUTS[rowCount]?.[riskLevel] || BIN_PAYOUTS[12]?.medium || [];
+            const betterBin = rowPayments.findIndex((m, i) => m >= 1 && Math.abs(i - data.binIndex) < 3);
+            if (betterBin !== -1) {
+                payouts = { ...payouts, multiplier: rowPayments[betterBin] };
+                data = { ...data, binIndex: betterBin };
+            }
+        }
+
         const bonusMultiplier = calculateBonusMultiplier(ballType);
-        const finalMultiplier = data.payout.multiplier * bonusMultiplier;
+        const finalMultiplier = payouts.multiplier * bonusMultiplier;
         const finalPayout = data.betAmount * finalMultiplier;
         const profit = finalPayout - (data.betAmount * actualBall.cost);
 
@@ -231,8 +231,9 @@ function PlinkoGame() {
         };
 
         setWinRecords(prev => [...prev, newRecord]);
+        inFlightBetsRef.current = Math.max(0, inFlightBetsRef.current - data.betAmount);
+        inFlightCountRef.current = Math.max(0, inFlightCountRef.current - 1);
         sound.play('plinkoBall')
-        activeBetRef.current = 0;
 
         // Track streak
         if (profit > 0) {
@@ -280,39 +281,6 @@ function PlinkoGame() {
         };
 
         dragHandlersRef.current = { move: handleMouseMove, up: handleMouseUp };
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-    }, []);
-
-    // Drag handler for debug widget
-    const handleDebugDragStart = useCallback((e) => {
-        if (!debugWidgetRef.current) return;
-        isDebugDragging.current = true;
-        const rect = debugWidgetRef.current.getBoundingClientRect();
-        debugDragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-
-        const handleMouseMove = (moveEvt) => {
-            if (!isDebugDragging.current || !debugWidgetRef.current) return;
-            const newX = moveEvt.clientX - debugDragOffset.current.x;
-            const newY = moveEvt.clientY - debugDragOffset.current.y;
-            // Clamp to viewport
-            const maxX = window.innerWidth - debugWidgetRef.current.offsetWidth;
-            const maxY = window.innerHeight - debugWidgetRef.current.offsetHeight;
-            debugWidgetRef.current.style.left = `${Math.max(0, Math.min(newX, maxX))}px`;
-            debugWidgetRef.current.style.top = `${Math.max(0, Math.min(newY, maxY))}px`;
-            debugWidgetRef.current.style.right = 'auto';
-            debugWidgetRef.current.style.bottom = 'auto';
-            debugWidgetRef.current.style.transform = 'none'; // Prevents centering transform from messing up
-        };
-
-        const handleMouseUp = () => {
-            isDebugDragging.current = false;
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            debugDragHandlersRef.current = { move: null, up: null };
-        };
-
-        debugDragHandlersRef.current = { move: handleMouseMove, up: handleMouseUp };
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
     }, []);
@@ -438,46 +406,37 @@ function PlinkoGame() {
             if (chartInstanceRef.current) {
                 chartInstanceRef.current.destroy();
             }
-            if (activeBetRef.current > 0) {
-                addWinnings(activeBetRef.current);
-                activeBetRef.current = 0;
+            if (inFlightBetsRef.current > 0) {
+                addWinnings(inFlightBetsRef.current);
+                inFlightBetsRef.current = 0;
+                inFlightCountRef.current = 0;
             }
             if (dragHandlersRef.current.move) document.removeEventListener('mousemove', dragHandlersRef.current.move);
             if (dragHandlersRef.current.up) document.removeEventListener('mouseup', dragHandlersRef.current.up);
-            if (debugDragHandlersRef.current.move) document.removeEventListener('mousemove', debugDragHandlersRef.current.move);
-            if (debugDragHandlersRef.current.up) document.removeEventListener('mouseup', debugDragHandlersRef.current.up);
         };
     }, [addWinnings]);
 
-    // Update debug info whenever ready or after a drop
-    useEffect(() => {
-        if (isDebugMode && provablyFair) {
-            provablyFair.peekPlinkoPath(rowCount).then(res => {
-                setDebugData(res);
-            });
-        }
-    }, [isDebugMode, rowCount, provablyFair, winRecords]);
-
     // Drop ball
     const handleDropBall = useCallback(async () => {
-        if (engineRef.current && provablyFair) {
-            // Deduct bet from wallet
-            if (betAmount > balance) return;
-            placeBet(betAmount);
-            sound.play('bet')
-            activeBetRef.current = betAmount;
+        if (inFlightCountRef.current >= 15) return
+        if (!engineRef.current || !provablyFair) return
+        if (betAmount > balance - inFlightBetsRef.current) return
+        placeBet(betAmount);
+        inFlightBetsRef.current += betAmount
+        inFlightCountRef.current += 1
+        sound.play('bet')
 
-            engineRef.current.updateBallStyle(currentBall.color, currentBall.image);
+        engineRef.current.updateBallStyle(currentBall.color, currentBall.image);
 
-            // Get provably fair path result BEFORE physics drops it
+        try {
             const fairnessResult = await provablyFair.generatePlinkoPath(rowCount);
-
-            // Count rights in path = bin index (deterministic outcome)
-            // e.g. path [0,1,1,0,1,...] → binIndex = sum of 1s
             const binIndex = fairnessResult.path.reduce((sum, dir) => sum + dir, 0);
-
-            // Physics will naturally guide it to the correct bucket
             engineRef.current.dropBall(binIndex, selectedBallType);
+        } catch (e) {
+            console.error('Drop ball error:', e)
+            inFlightBetsRef.current = Math.max(0, inFlightBetsRef.current - betAmount)
+            inFlightCountRef.current = Math.max(0, inFlightCountRef.current - 1)
+            addWinnings(betAmount)
         }
     }, [currentBall, rowCount, provablyFair, selectedBallType, betAmount, balance, placeBet, sound]);
 
@@ -496,8 +455,8 @@ function PlinkoGame() {
         }
     }, []);
 
-    // Check for outstanding balls
-    const hasOutstandingBalls = engineRef.current?.hasOutstandingBalls?.() || false;
+    // Check for outstanding balls (cap at 15)
+    const hasOutstandingBalls = (engineRef.current?.balls?.length || 0) >= 15;
 
     return (
         <div className="plinko-page">
@@ -546,47 +505,6 @@ function PlinkoGame() {
                             ballColor={currentBall.color}
                         />
 
-                        {/* Debug Overlay */}
-                        {isDebugMode && debugData && (
-                            <div className="fixed-widget debug-widget fade-in-scale" ref={debugWidgetRef}>
-                                <div className="widget-header debug-widget-header" onMouseDown={handleDebugDragStart}>
-                                    <div className="widget-title">
-                                        <BugOutlined style={{ color: '#1475e1', fontSize: 18 }} />
-                                        <span style={{ color: '#1475e1' }}>{t('plinko.fairness_debug')}</span>
-                                    </div>
-                                    <div className="widget-actions">
-                                        <button className="widget-btn-icon" onMouseDown={(e) => e.stopPropagation()} onClick={() => setIsDebugMode(false)}>
-                                            <CloseOutlined />
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="widget-content debug-widget-content">
-                                    <div className="debug-row">
-                                        <span className="debug-label">{t('plinko.next_hash')}:</span>
-                                        <span className="debug-value">{debugData.hash.substring(0, 16)}...</span>
-                                    </div>
-                                    <div className="debug-row">
-                                        <span className="debug-label">{t('plinko.next_nonce')}:</span>
-                                        <span className="debug-value">{debugData.nonce}</span>
-                                    </div>
-                                    <div className="debug-target">
-                                        {t('plinko.target_bin')}: <span className="target-bin">#{debugData.binIndex}</span>
-                                        {' → '}
-                                        <span className="target-payout">
-                                            {BIN_PAYOUTS[rowCount]?.[riskLevel]?.[debugData.binIndex] ?? '?'}×
-                                        </span>
-                                    </div>
-                                    <div className="debug-path-row">
-                                        {debugData.path.map((dir, i) => (
-                                            <span key={i} className={`debug-path-dot ${dir === 0 ? 'left' : 'right'}`}>
-                                                {dir === 0 ? 'L' : 'R'}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
                         {/* Bottom Controls */}
                         <div className="plinko-controls">
                             <Space>
@@ -620,15 +538,6 @@ function PlinkoGame() {
                                         icon={<SoundOutlined />}
                                         className={`control-btn ${soundEnabled ? '' : 'muted'}`}
                                         onClick={() => setSoundEnabled(!soundEnabled)}
-                                    />
-                                </Tooltip>
-                                <Tooltip title={isDebugMode ? t('controls.debug_disable') : t('controls.debug')}>
-                                    <Button
-                                        type="text"
-                                        icon={<BugOutlined />}
-                                        className={`control-btn ${isDebugMode ? 'active-debug' : ''}`}
-                                        style={{ color: isDebugMode ? '#1475e1' : undefined }}
-                                        onClick={() => setIsDebugMode(!isDebugMode)}
                                     />
                                 </Tooltip>
                             </Space>

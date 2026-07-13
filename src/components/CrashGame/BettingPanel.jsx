@@ -20,7 +20,7 @@ import { cryptos } from '../../data/cryptos'
 const { Text } = Typography
 
 function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancelBet }) {
-    const { activeCurrency, t } = useWallet()
+    const { activeCurrency, activeFiat, t } = useWallet()
     const selectedCrypto = cryptos.find(c => c.id === activeCurrency) || cryptos[0]
     const [activeTab, setActiveTab] = useState('manual')
     const [betAmount, setBetAmount] = useState(1)
@@ -56,7 +56,7 @@ function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancel
             return t('game.cancel')
         }
         if (phase === 'running' && betPlaced) {
-            return `${t('crash.cash_out_btn')} $${(betAmount * multiplier).toFixed(2)}`
+            return `${t('crash.cash_out_btn')} ${activeFiat.symbol}${(betAmount * multiplier).toFixed(2)}`
         }
         return t('game.bet')
     }
@@ -90,7 +90,7 @@ function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancel
                     <div className="form-group">
                         <div className="form-header">
                             <label className="form-label" style={{ margin: 0 }}>{t('game.bet_amount')}</label>
-                            <Text type="secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><CryptoImg crypto={selectedCrypto} size={12} /> ${Number(betAmount || 0).toFixed(2)}</Text>
+                            <Text type="secondary" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}><CryptoImg crypto={selectedCrypto} size={12} /> {activeFiat.symbol}{Number(betAmount || 0).toFixed(2)}</Text>
                         </div>
                         <div className="input-row">
                             <BetInput
@@ -155,7 +155,7 @@ function BettingPanel({ phase, betPlaced, multiplier, onBet, onCashout, onCancel
                             <label className="form-label" style={{ margin: 0 }}>{t('game.profit_on_win')}</label>
                         </div>
                         <Text strong style={{ color: '#00e701', fontSize: 16, fontFamily: "'Courier New', monospace", display: 'flex', alignItems: 'center', gap: 4 }}>
-                            +<CryptoImg crypto={selectedCrypto} size={12} />${profit.toFixed(2)}
+                            +<CryptoImg crypto={selectedCrypto} size={12} />{activeFiat.symbol}{profit.toFixed(2)}
                         </Text>
                     </div>
                 </div>

@@ -1,13 +1,20 @@
-import { deductCoinBalance, addCoinBalance, incrementTotalDeposits } from '../../lib/storage.js'
+import { deductCoinBalance, addCoinBalance, incrementTotalDeposits, getStarsUsdRate } from '../../lib/storage.js'
+import { withValidation } from '../../lib/withValidation.js'
+import { rateLimit } from '../../lib/rateLimit.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' })
     }
 
-    let { userId, coin, action, amount, isDeposit } = req.body
+    let { userId, coin, action, amount, isDeposit, tonPrice } = req.body
     if (!userId || !coin || !action || amount == null) {
         return res.status(400).json({ error: 'Missing required fields: userId, coin, action, amount' })
+    }
+
+    const allowed = await rateLimit(`balance_update:${userId}`, 100, 60)
+    if (!allowed) {
+        return res.status(429).json({ error: 'Too many requests. Try again later.' })
     }
 
     try {
@@ -19,8 +26,25 @@ export default async function handler(req, res) {
             if (isDeposit) {
                 await incrementTotalDeposits(userId, amount)
             }
+        } else if (action === 'exchange_stars_to_ton') {
+            const starsAmount = parseFloat(amount)
+            if (isNaN(starsAmount) || starsAmount <= 0) {
+                return res.status(400).json({ error: 'Invalid amount' })
+            }
+            if (!tonPrice || tonPrice <= 0) {
+                return res.status(400).json({ error: 'Invalid TON price' })
+            }
+            const starsUsdRate = await getStarsUsdRate()
+            const tonAmount = parseFloat(((starsAmount * starsUsdRate) / tonPrice).toFixed(6))
+            if (tonAmount <= 0) {
+                return res.status(400).json({ error: 'Amount too small' })
+            }
+            balances = await deductCoinBalance(userId, 'stars', starsAmount)
+            balances = await addCoinBalance(userId, 'ton', tonAmount)
+            res.json({ balances, tonAmount, starsAmount })
+            return
         } else {
-            return res.status(400).json({ error: 'Invalid action. Must be "bet" or "win"' })
+            return res.status(400).json({ error: 'Invalid action. Must be "bet", "win", or "exchange_stars_to_ton"' })
         }
         const total = Object.values(balances).reduce((s, v) => s + v, 0)
         res.json({ balances, total })
@@ -32,3 +56,5 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'Failed to update balance' })
     }
 }
+
+export default withValidation(handler)
