@@ -36,7 +36,7 @@ export default function WelcomeBonusPopup() {
 
                 <div className="welcome-bonus-body">
                     <h2 className="welcome-bonus-title">100% Deposit Bonus + $1000 Bonus</h2>
-                    <p className="welcome-bonus-sub">Min deposit: $10.</p>
+                    <p className="welcome-bonus-sub">Minimum deposit: $10</p>
                     <p className="welcome-bonus-sub">Use promo code <span className="welcome-bonus-code">WELCOME</span></p>
 
                     <button className="welcome-bonus-btn" onClick={handleClaim}>
